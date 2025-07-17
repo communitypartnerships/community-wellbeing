@@ -3,7 +3,7 @@ title: "Charlottesville Profile: Key Outcomes"
 date: "July 2025"
 date-format: "MMMM YYYY"
 # subtitle: "Report on measures of community well-being for the City of Charlottesville"
-image: images/mall.png
+image: images/mall.jpeg
 format: 
   html:
     toc: true

@@ -2,7 +2,7 @@
 title: "Albemarle and Charlottesville Combined Area Profile: Key Outcomes"
 date: "July 2025"
 date-format: "MMMM YYYY"
-image: images/mural.png
+image: images/mural.jpeg
 format: 
   html:
     embed-resources: true
