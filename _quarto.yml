@@ -9,7 +9,8 @@ project:
     - "/images"
 website:
   favicon: images/favicon.ico
-  open-graph: true
+  open-graph: 
+    image: images/ccp-image-card.png
   search: false
   title: "Community Wellbeing"
   navbar:
