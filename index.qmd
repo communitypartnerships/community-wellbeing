@@ -19,7 +19,15 @@ execute:
   warning: false
 ---
 
+::: {style="font-size: 1.1rem;"} 
+
+The Community Wellbeing Profiles present current data on measures related to well-being in Albemarle County, the City of Charlottesville, and the combined area. The American Human Development Index (AHDI) provides a framework to assess and advocate for increased and inclusive well-being. Along with AHDI, the reports include sections on demographics, health, education, and economic security and housing. 
+
+These measures and outcomes are a resource for residents and leaders to support understanding of our collective well-being and point to challenges we can address together. The online profiles display key outcomes from each report, with link to download the full report PDF.
+
 ::: {#home-listings}
 :::
 
 These reports were done in partnership between the UVA Center for Community Partnerships, Albemarle County, and the City of Charlottesville.
+
+:::
