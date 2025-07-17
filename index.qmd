@@ -1,0 +1,25 @@
+---
+title: "Albemarle and Charlottesville Community Wellbeing Profiles"
+listing:
+  id: home-listings
+  type: grid
+  grid-columns: 3
+  sort: false
+  image-placeholder: images/ccp-grid-image.png
+  fields: [image, title, subtitle, date]
+  date-format: "MMMM YYYY"
+  contents:
+    - "albemarle-key-outcomes.qmd"
+    - "charlottesville-key-outcomes.qmd"
+    - "combined-area-outcomes.qmd"
+execute:
+  cache: true
+  echo: false
+  message: false
+  warning: false
+---
+
+::: {#home-listings}
+:::
+
+These reports were done in partnership between the UVA Center for Community Partnerships, Albemarle County, and the City of Charlottesville.

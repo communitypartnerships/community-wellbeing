@@ -1,0 +1,1244 @@
+---
+title: "Charlottesville Profile: Key Outcomes"
+date: "July 2025"
+date-format: "MMMM YYYY"
+# subtitle: "Report on measures of community well-being for the City of Charlottesville"
+image: images/mall.png
+format: 
+  html:
+    toc: true
+execute:
+  cache: false
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r setup}
+#| include: false
+
+# Load packages ----
+library(tidyverse)
+library(scales)
+library(rcartocolor)
+library(tigris)
+library(sf)
+library(gt)
+library(leaflet)
+library(highcharter)
+# # library(tidycensus)
+# library(tidyverse)
+# library(scales)
+# library(janitor)
+# library(rcartocolor)
+# library(RColorBrewer)
+# # library("ggspatial")
+# library(tigris)
+# library(sf)
+# # library(ggrepel)
+# # library(ggpp) 
+# # library(ggpubr)
+# # library(readxl)
+# # library(ggpol)
+# # library(ggthemes)
+# # library(patchwork)
+# library(gt)
+# # library(ggalt) # geom_xspline
+# # library(ggnewscale)
+# library(leaflet)
+# library(highcharter)
+
+# Tract geometries ----
+cville_geo <- tracts(state = "VA", county = "540")
+cville_geo <- cville_geo %>% st_transform(cville_geo, crs = 4326) 
+
+# Palettes ----
+pal_ahdi <- carto_pal(7, "Purp")
+pal_safe <- c("#332288", "#85C4C9", "#CC6677", "#117733")
+pal_health <- carto_pal(7, "Teal")
+pal_edu <- carto_pal(7, "PinkYl")
+pal_inc <- carto_pal(7, "Emrld")
+
+# Common Items ----
+locality_name <- "City of Charlottesville"
+school_district <- "Charlottesville City Schools (CCS)"
+source_acs <- "Data Source: U.S. Census Bureau, American Community Survey 5-year estimates, 2023"
+source_vdoe <- "Data Source: Virginia Department of Education, 2023-2024"
+
+# Add Map Reset button function
+  addResetMapButton <- function(leaf) {
+    leaf %>%
+      addEasyButton(
+        easyButton(
+          icon = "ion-arrow-expand", 
+          title = "Reset View", 
+          onClick = JS(
+            "function(btn, map){ map.setView(map._initialCenter, map._initialZoom); }"
+          )
+        )
+      ) %>% 
+      htmlwidgets::onRender(
+        JS(
+          "function(el, x){ 
+            var map = this; 
+            map.whenReady(function(){
+              map._initialCenter = map.getCenter(); 
+              map._initialZoom = map.getZoom();
+            });
+          }"
+        )
+      )
+  }
+
+```
+
+## Introduction
+
+Ensuring the full inclusion of residents in the social, economic, and civic life of a region supports the long-term health and vibrancy of a community. The systems of education, employment, housing, and health care affect all residents, but they do not always promote well-being for all residents. An inclusive community is one in which all individuals—regardless of their racial, ethnic, religious, gender, or sexual identity, their age or place of birth, their economic circumstances or neighborhood of residence—can access resources and opportunities that advance health, civic participation, and economic security. 
+
+### Full Report PDF
+
+This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [City of Charlottesville Community Wellbeing Profile](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"}
+
+## Demographics
+
+A locality’s demographic composition can reflect the area’s past and current policy choices, inform the diverse needs of different community members, and provide insight into the region’s cultural inclusivity. The profile begins by examining the population attributes of the estimated 51,743 city residents.^[University of Virginia Weldon Cooper Center for Public Service. (2024). Virginia Population Estimates. Retrieved from [https://coopercenter.org/virginia-population-estimates](https://coopercenter.org/virginia-population-estimates).]
+
+```{r race-ethn-2013-2023, results = 'asis'}
+# Race/Ethnicity ----
+ethn_race_2012_2023 <- read_csv("regional-equity-profile/data/cville_ethn_race_2012_2023.csv")
+ethn_race_2012_2023 <- ethn_race_2012_2023 %>% 
+  mutate(year = factor(year, levels = c("2012","2013","2014","2015","2016",
+                                        "2017","2018","2019","2020","2021","2022", "2023")),
+         label = factor(label, 
+                        levels = c("Not Hispanic or Latino: Some other race alone",
+                                   "Not Hispanic or Latino: Native Hawaiian and Other Pacific Islander alone",
+                                   "Not Hispanic or Latino: American Indian and Alaska Native alone",
+                                   "Not Hispanic or Latino: Asian alone",
+                                   "Not Hispanic or Latino: Two or more races", 
+                                   "Hispanic or Latino",
+                                   "Not Hispanic or Latino: Black or African American alone", 
+                                   "Not Hispanic or Latino: White alone" ), 
+                        labels = c("Other Racial Identities", "Native Hawaiian/Pacific Islander", "American Indian/Alaskan Native","Asian", "Multiracial","Hispanic", "Black","White")),
+         percent_moe = round(100 * (moe / total_pop), digits = 2),
+         text = case_when(percent >= 1 ~ paste0(round(percent, 0), "%"),
+                          percent < 1 ~ "")
+  )
+
+ethn_race_2012_2023_chart <- ethn_race_2012_2023 %>% 
+  filter(year != "2012") %>% 
+  arrange(year) %>% 
+  hchart('column', hcaes(x = year, y = percent, group = label), stacking = 'normal', pointWidth = 50) %>% 
+  hc_legend(align = "center", verticalAlign = "top", reversed = TRUE) %>%
+  hc_xAxis(title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 100,
+           title = list(enabled = FALSE),
+           labels = list(format = '{text}%')) %>%
+  hc_colors(c("#43daed","#b69cfd","#fbb12d","#009ddc","#ee2b75","#b4cd23","#ff641e","#b2b8be")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: .0f}%', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = 'Population Composition by Race & Ethnicity, 2013-2023',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Data Source: U.S. Census Bureau, American Community Survey 5-year estimates, 2013-2023",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+ethn_race_2012_2023_chart
+
+
+```
+
+See the [full report](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"} for additional measures on age, gender, language and linguistic isolation, and the prevalence of disabilities among residents in the City of Charlottesville.
+
+## American Human Development Index (AHDI)
+
+The American Human Development Index (AHDI) is a metric that assesses well-being along three axes: health, access to knowledge, and living standards. This metric was created by [Measure of America of the Social Science Research Council](https://measureofamerica.org/human-development/){target="_blank"} to be estimated at geographic levels, such as states and counties, and to speak directly to the American context of an affluent democracy.^[“About Human Development.” Measure of America, [https://measureofamerica.org/human-development/](https://measureofamerica.org/human-development/)]
+
+Each component of AHDI—health, access to knowledge, and living standards—is scored on a 0 to 10 scale for a specific geography.^[See the Measure of America Methodological Notes for the complete methodology: [https://measureofamerica.org/wp-content/uploads/2010/11/The-Measure-of-America-2010-2011-Methodological-Notes.pdf](https://measureofamerica.org/wp-content/uploads/2010/11/The-Measure-of-America-2010-2011-Methodological-Notes.pdf)] The AHDI is the average of these three scores: each component carries equal weight in the composite index as all carry equal importance for community well-being.
+
+The following table shows AHDI for City of Charlottesville, Albemarle County, Virginia overall, and other localities that serve as comparative benchmarks.
+
+```{r ahdi-benchmarks}
+
+# AHDI Benchmarks ----
+ahdi_benchmarks <- read_csv("regional-equity-profile/data/ahdi_benchmarks_2023.csv")
+
+cville_bench <- c("1","51","51003","51540","51510","51013","51680","51760","51770","51830")
+
+# AHDI Benchmarks: Charlottesville ----
+ahdi_table_cville <- ahdi_benchmarks %>% 
+  filter(GEOID %in% cville_bench) %>% 
+  mutate(name_order = fct_relevel(name, c("Charlottesville", "Albemarle","Virginia", "United States", "Alexandria City", "Lynchburg City", "Richmond City", "Roanoke City", "Williamsburg City", "Arlington"))) %>%
+  arrange(name_order) %>%
+  mutate(`American HD Index` = round(ahdi, 1),
+         across(lifeexp_est:enrollment_per, ~ round(.x, 0))) %>% 
+  select(name, `American HD Index`, lifeexp_est:med_earnings) %>% 
+  rename(`Life Expectancy (years)` = lifeexp_est,
+         `At Least High School Diploma` = hs_grad_per,
+         `At Least Bachelor’s Degree` = bac_deg_per,
+         `Graduate Degree` = grad_deg_per,
+         `School Enrollment` = enrollment_per, 
+         `Median Earnings (2023 $)` = med_earnings)
+  
+cville_ahdi_bench <- ahdi_table_cville %>%
+  select(name:`Median Earnings (2023 $)`) %>% 
+  mutate(across(`At Least High School Diploma`:`School Enrollment`, ~ (as.numeric(.x)/100))) %>%
+  gt(rowname_col = "name") %>%
+  tab_row_group(label = "Local",
+                rows = c("Charlottesville", "Albemarle")) %>% 
+  tab_row_group(label = "State & US",
+                rows = c("Virginia", "United States")) %>%
+  tab_row_group(label = "Benchmark Localities",
+                rows = 5:10) %>%
+    row_group_order(groups = c("Local", "State & US", "Benchmark Localities")) %>% 
+  tab_spanner(
+    label = "Health",
+    columns = c(`Life Expectancy (years)`)
+  ) %>% 
+  tab_spanner(
+    label = "Access to Knowledge",
+    columns = c(`At Least High School Diploma`, `At Least Bachelor’s Degree`, `Graduate Degree`, `School Enrollment`)
+  ) %>%
+  fmt_percent(
+    columns = `At Least High School Diploma`:`School Enrollment`,
+    decimals = 0
+  ) %>% 
+  tab_spanner(
+    label = "Living Standards",
+    columns = c(`Median Earnings (2023 $)`)
+  ) %>% 
+  fmt_currency(
+    columns = `Median Earnings (2023 $)`,
+    currency = currency(
+      html = "&#36;",
+      default = "$"
+    ),
+    decimals = 0
+  ) %>% 
+  cols_width(
+    name ~ px(140)
+  ) %>% 
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(), cells_body())
+  ) %>%
+  data_color(
+    columns = `Life Expectancy (years)`,
+    direction = "column",
+    method = "numeric",
+    palette = c("#D1EEEA", "#769DB1")
+    # palette = pal_health
+  ) %>% 
+  data_color(
+    columns = `At Least High School Diploma`:`School Enrollment`,
+    direction = "column",
+    method = "numeric",
+    palette = c("#FAF0F1", "#CC6677")
+    # palette = pal_edu
+  ) %>% 
+  data_color(
+    columns = `Median Earnings (2023 $)`,
+    direction = "column",
+    method = "numeric",
+    palette = c("#E7F1EB", "#117733")
+    # palette = pal_inc
+  ) %>% 
+  data_color(
+    columns = `American HD Index`,
+    direction = "column",
+    method = "numeric",
+    palette = c("#EBE9F3", "#332288")
+    # palette = pal_ahdi
+  ) %>% 
+  tab_header(
+    title = md("**American Human Development Index: Comparison Across Benchmark Localities**")
+  ) %>% 
+  tab_source_note(
+    source_note = md("Data Sources: *Life Expectancy:* County Health Rankings, 2024. *Education and Earnings:* U.S. Census Bureau, American Community Survey 5-year estimates, 2023.")
+  )
+
+cville_ahdi_bench
+
+
+```
+
+Within the city, there are large differences in AHDI across neighborhoods. That is, people are experiencing different outcomes in their health, education, and living standards depending on where they live. 
+
+The map below shows the AHDI for each census tract. Census tracts are areas determined by the U.S. Census Bureau to approximate neighborhoods; they are roughly equal in population and are bounded by major roads, rivers and railroad tracks.
+
+#### American Human Development Index (AHDI) by Census Tract
+```{r ahdi-rank}
+#| column: margin
+
+# AHDI tracts, geospatial ----
+ahdi_tract_cville <- read_csv("regional-equity-profile/data/ahdi_tract_cville_2023.csv") %>% 
+  mutate(GEOID = as.character(GEOID),
+         ahdi = round(ahdi, digits = 1))
+ahdi_tract_cville <- ahdi_tract_cville[order(ahdi_tract_cville$tractnames, decreasing=FALSE),]
+
+ahdi_tract_cville <- ahdi_tract_cville %>%
+  left_join(cville_geo, by = join_by(GEOID == GEOID)) %>%
+  st_as_sf()
+
+cville_rank_data <- ahdi_tract_cville %>% 
+  group_by(ahdi) %>% 
+  summarise(tractnames = paste(tractnames, collapse = "\n")) %>% 
+  na.exclude() %>% 
+  arrange(desc(ahdi)) %>% 
+  st_drop_geometry
+
+cville_ahdi_rank <- cville_rank_data %>%
+  mutate(color = "") %>% 
+  select(c(tractnames, color, ahdi)) %>%
+  gt() %>% 
+  data_color(
+    columns = ahdi,
+    target_columns = color,
+    direction = "column",
+    palette = pal_ahdi,
+  )  %>% 
+  cols_label(
+    ahdi = "AHDI Value", tractnames = "Census Tract",
+    color = ""
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(2:3), cells_body(2:3))
+  ) %>% 
+  tab_options(table.font.size = pct(75),
+              data_row.padding = px(3))
+
+cville_ahdi_rank
+
+```
+
+```{r ahdi-tract, results = 'asis'}
+# | fig-height: 6
+
+map_pal <- colorBin(pal_ahdi, domain = ahdi_tract_cville$ahdi, reverse = FALSE)
+map_pal_rev <- colorBin(pal_ahdi, domain = ahdi_tract_cville$ahdi, reverse = TRUE)
+
+ahdi_cville_map <- ahdi_tract_cville %>%
+  leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  addPolygons(fillColor = ~map_pal(ahdi),
+              weight = 1,
+              opacity = 1,
+              color = "white", 
+              fillOpacity = 0.7,
+              highlight = highlightOptions(fillOpacity = 1,
+                                           bringToFront = T),
+              popup = paste0("Place: ", ahdi_tract_cville$tractnames, "<br>",
+                             "Census Tract: ", ahdi_tract_cville$NAME, "<br>",
+                             "AHDI Value: ", ahdi_tract_cville$ahdi, "")) %>% 
+  addLegend("topright", pal = map_pal_rev, values = ~ahdi, 
+            title = "AHDI Value", opacity = 0.7,
+            labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE))) %>% 
+  addResetMapButton()
+
+
+ahdi_cville_map
+
+
+```
+</br></br>
+To better understand the nature of these discrepancies, the following figure shows the value for each individual AHDI component by census tract. 
+
+```{r ahdi-dimensions, results = 'asis'}
+#| fig-height: 6
+# AHDI dimensions tracts ----
+ahdi_gap <- ahdi_tract_cville %>% 
+  select(tractnames, health_index, education_index, income_index, ahdi) %>% 
+  group_by(tractnames, health_index, education_index, income_index, ahdi) %>% 
+  summarise(min = case_when(income_index >= 0 ~ min(health_index, education_index, income_index, ahdi),
+                            income_index < 0 ~ min(health_index, education_index, ahdi)),
+            max = case_when(income_index >= 0 ~ max(health_index, education_index, income_index, ahdi),
+                            income_index < 0 ~ max(health_index, education_index, ahdi))) %>% 
+  ungroup() %>% 
+  mutate(isna = case_when(is.na(ahdi) ~ TRUE,
+                          .default = FALSE),
+         rank = ahdi) %>% 
+    pivot_longer(c(health_index, education_index, income_index, ahdi)) %>% 
+  mutate(name = factor(name, levels = c("ahdi", "health_index", "education_index", "income_index"),
+                       labels = c("American Human \nDevelopment Index (AHDI)", "Health Index", "Education Index", "Income Index")),
+         value = round(value, 1)) %>% 
+  st_drop_geometry
+
+ahdi_gap <- ahdi_gap[order(ahdi_gap$rank, decreasing=TRUE),]
+
+ahdi_dimens_chart <- ahdi_gap %>% 
+  hchart("columnrange", hcaes(x = tractnames, y = value, low = min, high = max),
+    showInLegend = FALSE, animation = FALSE, enableMouseTracking=FALSE) %>% 
+  hc_add_series(data = ahdi_gap,
+    "scatter",
+    hcaes(x = tractnames, y = value, group = name)) %>% 
+  hc_chart(inverted = TRUE) %>% 
+  hc_plotOptions(columnrange = list(maxPointWidth = 2,
+                                    color = "#b2b8be"),
+                 scatter = list(lineWidth = 0,
+                                marker = list(radius = 5),
+                                showInLegend = TRUE)) %>% 
+  hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 11,
+           title = list(enabled = FALSE),
+           # labels = list(format = '{text}%'),
+           opposite = TRUE) %>% 
+  hc_colors(pal_safe) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = 'Dimensions of the American Human Development Index by Census Tract',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "The income index for JPA-Fontaine and 10th & Page-Venable are not shown due to negative values. Negative values in the income index means that the median earnings for 
+             these tracts is lower than the minimum earnings goalpost used in calculating the AHDI ($20,394 in 2023 dollars). Data Sources: 
+             Life Expectancy: County Health Rankings, 2024. Education and Earnings: U.S. Census Bureau, American Community Survey 5-year estimates, 2023.",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+ahdi_dimens_chart
+
+```
+
+Neighborhoods like Barracks-Rugby, JPA-Fontaine, and 10th & Page-Venable have a wide gap between their AHDI components, with high values in their education index and low values in earnings. Some of this can be explained by the off-campus student housing prevalent in these areas of the city, as students tend to make very low wages while enrolled full time at the University. However, the presence of low-earning students does not account for all of the apparent economic precarity.^[Juday, Luke and Rorem, Annie. How to modify poverty calculations for college towns. 2016. Weldon Cooper Center for Public Service, University of Virginia. [https://www.coopercenter.org/research/how-modify-poverty-calculations-college-towns](https://www.coopercenter.org/research/how-modify-poverty-calculations-college-towns)] 
+
+US Census data provides further detail on residents in these neighborhoods that helps us better understand the impact of student populations on poverty rates in the city. The following table shows several related measures for each tract surrounding the University: the overall poverty rate and the poverty rate for non-students, the percent of residents who received SNAP benefits within the past 12 months (in 2023), and the percent of residents considered “college-aged.”
+
+```{r supplemental-table}
+neighborhood_supplement <- read_csv("regional-equity-profile/data/supplement_table_2023.csv")
+
+neighborhood_supplement <- neighborhood_supplement %>% 
+  filter(name %in% c("10th & Page-Venable", "Barracks-Rugby", "JPA-Fontaine", "Charlottesville city, Virginia")) %>% 
+  rename("Overall Poverty Rate" = "Income in the past 12 months below poverty level",
+         "Non-Student Poverty Rate" = "Non-students below the poverty level",
+         "Received SNAP benefits" = "Household received Food Stamps/SNAP in the past 12 months",
+         "Residents 18-24 yrs." = "Population 18-24 years") %>% 
+  mutate(name = case_when(name == "Charlottesville city, Virginia" ~ "Charlottesville Overall",
+                          .default = name)) %>% 
+  select(-c("locality", "tract", "Non-students at or above the poverty level"))
+
+neighborhood_supplement %>%
+  mutate(across(`Overall Poverty Rate`:`Residents 18-24 yrs.`, ~ (as.numeric(.x)/100))) %>%
+  gt(rowname_col = "name") %>%
+  fmt_percent(
+    columns = `Overall Poverty Rate`:`Residents 18-24 yrs.`,
+    decimals = 0
+  ) %>% 
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(), cells_body())
+  ) %>%
+  tab_header(
+    title = md("**Student and non-student residents in neighborhoods surrounding the University**")
+  ) %>%
+  tab_source_note(
+    source_note = md(source_acs)
+  )
+
+```
+The above table makes it clear that in the area of 10th & Page-Venable, a historically Black neighborhood that now contains numerous rental properties frequently occupied by UVA students, there is significant financial need that cannot be attributed to student residents. Comparing poverty rates between non-student residents (41%) and the tract overall (61%) suggests that the overall poverty rate for this tract is not heavily impacted by students but reflects the high rate of intergenerational poverty in the neighborhood. In addition, 22% of residents are estimated to be receiving SNAP benefits—a significantly higher rate than the city overall. While over half of residents are college-aged, there are also around 550 families, 365 of these with children, living in the 10th & Page-Venable neighborhood.^[U.S. Census Bureau. "Family Type by Presence and Age of Related Children Under 18 Years." American Community Survey, ACS 5-Year Estimates Detailed Tables, Table B11004, 2023, [https://data.census.gov/table/ACSDT5Y2023.B11004?q=B11004&g=1400000US51540000202](https://data.census.gov/table/ACSDT5Y2023.B11004?q=B11004&g=1400000US51540000202).]
+
+College students do have an overall impact on the demographics and measures on poverty in Charlottesville. Over 20% of the population is between the ages of 18 and 24 years old, and the student population does appear to contribute to the rate of poverty in the city: the overall poverty rate is 23% while the rate for non-student residents is significantly less, at 14%. This pattern is especially apparent in the JPA-Fontaine and Barracks-Rugby areas.
+
+College student poverty is frequently transitional; the structural poverty facing our community is persistent. Charlottesville’s status as a college town can obscure the reality of structural poverty in many Charlottesville neighborhoods, particularly those that are University-adjacent. 
+
+## A Long and Healthy Life: Health Profile
+
+The health care we receive and the individual choices we make impact our health, but so do the places where we live, work, play and pray—the social determinants of health.  The CDC estimates that as much as 50% of individual health is due to “social, economic, and environmental factors, such as education, racism, discrimination, and housing.”^[Centers for Disease Control and Prevention, “Community Health Improvement Navigator,” Last modified August 19, 2015, [https://www.cdc.gov/chinav/index.html](https://www.cdc.gov/chinav/index.html)] That is, many disparities in health stem from inequities in the opportunities and resources needed to be healthy. 
+
+### Health Insurance
+
+Health insurance supports access to routine health care and provides some protection from unanticipated medical expenses. In Charlottesville, 1 in 15 people do not have health insurance. Those without insurance are less likely to have a primary care provider, are more likely to delay or forgo needed care, and receive fewer preventative services.^[Report: The Importance of Health Coverage. American Hospital Association. [https://www.aha.org/guidesreports/report-importance-health-coverage](https://www.aha.org/guidesreports/report-importance-health-coverage)] There are major demographic and geographic disparities in health insurance coverage across the county.
+
+```{r health-insure-race, results = 'asis'}
+# Health Insurance by Race ----
+health_insured_county <- read_csv("regional-equity-profile/data/cville_health_insured_county_race_2023.csv")
+
+health_insured_county <- health_insured_county %>%
+  filter(!group %in% c("White alone", "American Indian and Alaska Native alone", "Native Hawaiian and Other Pacific Islander alone", "Some other race alone")) %>%
+  mutate(group = factor(group, levels = c("White non Hispanic", "Two or more races", "Hispanic or Latino", "Black or African American alone", "Asian alone", "All"),
+                       labels = c("White", "Multiracial", "Hispanic", "Black", "Asian", "All Residents")),
+         text = paste0(round(percent_uninsured,0), "%"))
+
+
+health_insured_chart <- health_insured_county %>%
+  hchart('column', hcaes(x = group, y = round(percent_uninsured,0))) %>%
+  hc_legend(enabled = FALSE) %>%
+  hc_xAxis(categories = c('All Residents', 'Asian', 'Black', 'Hispanic',  'Multiracial', 'White'), title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 40,
+           title = list(text = "Percent Uninsured", style = list(fontSize = '1.2em')),
+           labels = list(format = '{text}%')) %>%
+  hc_colors(c('#3B8EA5')) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y}%', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>Percent Uninsured: <b>' + this.y + '%' + '</b>'
+  }")) %>%
+  hc_title(text = paste0('Residents with No Health Insurance by Race'),
+                  align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = source_acs,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+health_insured_chart
+
+```
+
+#### Residents with No Health Insurance by Census Tract
+```{r uninsured-rank}
+#| column: margin
+
+# Health Insurance by tract ----
+health_insured_tract <- read_csv("regional-equity-profile/data/cville_health_insured_tract_2023.csv") %>%
+  mutate(GEOID = as.character(GEOID),
+         per_uninsured_rounded = round(percent_uninsured,0))
+
+health_insured_tract <- health_insured_tract %>%
+  left_join(cville_geo, by = "GEOID") %>% 
+  st_as_sf()
+
+insured_rank_data <- health_insured_tract %>% 
+  arrange(desc(per_uninsured_rounded)) %>% 
+  st_drop_geometry
+
+insured_rank <- insured_rank_data %>%
+  mutate(per_uninsured_rounded = per_uninsured_rounded/100,
+         color = "") %>% 
+  select(c(tractnames, color, per_uninsured_rounded)) %>%
+  gt() %>% 
+  data_color(
+    columns = per_uninsured_rounded,
+    target_columns = color,
+    direction = "column",
+    palette = pal_health,
+  )  %>% 
+  fmt_percent(
+    columns = per_uninsured_rounded,
+    decimals = 0
+  ) %>%
+  cols_label(
+    per_uninsured_rounded = "Uninsured", tractnames = "Census Tract",
+    color = ""
+  ) %>%
+  cols_width(
+    tractnames ~ px(155)
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(2:3), cells_body(2:3))
+  ) %>% 
+  tab_options(table.font.size = pct(75),
+              data_row.padding = px(3))
+
+insured_rank
+
+```
+
+```{r uninsured-tract, results = 'asis'}
+#| fig-height: 6
+
+map_pal <- colorBin(pal_health, domain = health_insured_tract$per_uninsured_rounded, reverse = FALSE)
+map_pal_rev <- colorBin(pal_health, domain = health_insured_tract$per_uninsured_rounded, reverse = TRUE)
+
+health_insured_map <- health_insured_tract %>%
+  leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  addPolygons(fillColor = ~map_pal(per_uninsured_rounded),
+              weight = 1,
+              opacity = 1,
+              color = "white", 
+              fillOpacity = 0.7,
+              highlight = highlightOptions(fillOpacity = 1,
+                                           bringToFront = T),
+              popup = paste0("Place: ", health_insured_tract$tractnames, "<br>",
+                             "Census Tract: ", health_insured_tract$NAME, "<br>",
+                             "Percent Uninsured: ", paste0(health_insured_tract$per_uninsured_rounded,"%"), "")) %>% 
+  addLegend("topright", pal = map_pal_rev, values = ~per_uninsured_rounded, 
+            title = "Percent Uninsured", opacity = 0.7,
+            labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE), suffix = "%")) %>% 
+  addResetMapButton()
+
+
+health_insured_map
+
+
+```
+</br></br>
+The [full profile](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"} provides additional health measures including life expectancy, food security, various health outcome and prevention metrics, and EMS responses to opiod overdoses for the City of Charlottesville.
+
+## Access to Knowledge: Education Profile
+
+Education promotes personal development in multiple ways and directly influences employment and earnings, which in turn influence access to decent housing, food, healthcare, transportation, and more. Education also enhances individual and collective civic life. Charlottesville is frequently celebrated for its educational environment, hosting a highly ranked university and ranking highly on lists of ‘best places to live’ which note the city’s well-educated population. More granular data on educational attainment in Charlottesville tells a more complex story and points to paths for improvement.
+
+### Degree Attainment
+
+The figure below shows how degree attainment varies across residents by race and ethnicity in the City of Charlottesville.
+
+```{r med-degree-attain-race, results = 'asis'}
+# Educational Attainment by Race ----
+edu_attain_county <- read_csv("regional-equity-profile/data/cville_edu_attain_county_2023.csv")  %>% 
+  select(-percent) %>% 
+  mutate(label = case_when(label == "High school graduate or higher" ~ "high_school_up",
+                     label == "Bachelor's degree or higher" ~ "bachelors_up",
+                     label == "Graduate or professional degree" ~ "grad")) %>% 
+  pivot_wider(names_from = label, values_from = c(estimate, moe)) %>% 
+  mutate(less_than_hs = pop_25_over - estimate_high_school_up,
+         hs_only = estimate_high_school_up - estimate_bachelors_up) %>% 
+  rename(bachelors_up = estimate_bachelors_up, 
+         group_total = pop_25_over) %>% 
+  select(GEOID, locality, less_than_hs, hs_only, bachelors_up, group_total, year)
+# Return to long, add percents, prep for data viz
+edu_attain_county <- edu_attain_county %>% 
+  pivot_longer(less_than_hs:bachelors_up) %>% 
+  mutate(percent = round(100 * (value / group_total), digits = 2),
+         group = "All") %>% 
+  rename(edu_level = name,
+         estimate = value) %>% 
+  select(GEOID, locality, group, group_total, edu_level, estimate, percent, year)
+
+edu_attain_race_county <- read_csv("regional-equity-profile/data/cville_edu_attain_race_county_2023.csv") %>% 
+  select(-group_total_moe) %>% 
+  rename(group = race)
+
+edu_attain_county_all <- rbind(edu_attain_county, edu_attain_race_county)
+  
+edu_attain_county_all <- edu_attain_county_all %>% 
+  filter(group_total != 0) %>% 
+  filter(group != "White") %>% 
+  mutate(label = factor(edu_level, 
+                        levels = c("bachelors_up","hs_only","less_than_hs"), 
+                        labels = c("Bachelor's degree or higher","High School diploma, no college", "Less than a HS diploma")),
+         group = factor(group,
+                       levels = c("All", "Amer_Indian", "Asian", "Black", "Hispanic", "Multi", "NHPI", "Other", "White_non_hisp"),
+                       labels = c("All Residents", "American Indian", "Asian", "Black", "Hispanic", "Multiracial", "Native Hawaiian/Pacific Islander", "Other Racial Identities", "White")),
+         text = case_when(percent >= 1 ~ paste0(round(percent, 0), "%"),
+                          percent < 1 ~ "")
+  )
+
+edu_attain_chart <- edu_attain_county_all %>% 
+  filter(!group %in% c("Other Racial Identities")) %>% 
+  filter(group_total >= 400) %>% 
+  hchart('column', hcaes(x = group, y = percent, group = label, label = text), stacking = 'normal') %>% 
+  hc_legend(align = "center", verticalAlign = "top", reversed = TRUE) %>%
+  hc_xAxis(categories = c('All Residents', 'Asian', 'Black', 'Hispanic',  'Multiracial', 'White'), title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 100,
+           title = list(enabled = FALSE),
+           labels = list(format = '{text}%')) %>%
+  hc_colors(c("#FAC484", "#EB7F86", "#A059A0")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: .0f}%', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = 'Educational Attainment by Race/Ethnicity for the population 25 years and over',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = source_acs,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+edu_attain_chart
+
+
+```
+
+There is also significant geographic variation in the rates of bachelor’s degree attainment throughout the city.
+
+#### Education Level: Bachelor's Degree or Higher by Census Tract
+```{r edu-attain-rank}
+#| column: margin
+
+# # Educational Attainment, with BA's by tract ----
+edu_attain_tract <- read_csv("regional-equity-profile/data/cville_edu_attain_tract_2023.csv") %>%
+  filter(label == "Bachelor's degree or higher") %>%
+  mutate(GEOID = as.character(GEOID),
+         percent = round(percent,0))
+
+edu_attain_tract <- edu_attain_tract %>%
+  left_join(cville_geo, by = "GEOID") %>% 
+  st_as_sf()
+
+edu_attain_rank_data <- edu_attain_tract %>% 
+  arrange(desc(percent)) %>% 
+  st_drop_geometry
+
+edu_attain_rank <- edu_attain_rank_data %>%
+  mutate(percent = percent/100,
+         color = "") %>% 
+  select(c(tractnames, color, percent)) %>%
+  gt() %>% 
+  data_color(
+    columns = percent,
+    target_columns = color,
+    direction = "column",
+    palette = pal_edu,
+  )  %>% 
+  fmt_percent(
+    columns = percent,
+    decimals = 0
+  ) %>%
+  cols_label(
+    percent = "BA or Higher", tractnames = "Census Tract",
+    color = ""
+  ) %>%
+  cols_width(
+    tractnames ~ px(160)
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(2:3), cells_body(2:3))
+  ) %>% 
+  tab_options(table.font.size = pct(75),
+              data_row.padding = px(3))
+
+edu_attain_rank
+
+```
+
+```{r edu-attain-tract, results = 'asis'}
+#| fig-height: 6
+
+map_pal <- colorBin(pal_edu, domain = edu_attain_tract$percent, reverse = FALSE)
+map_pal_rev <- colorBin(pal_edu, domain = edu_attain_tract$percent, reverse = TRUE)
+
+edu_attain_map <- edu_attain_tract %>%
+  leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  addPolygons(fillColor = ~map_pal(percent),
+              weight = 1,
+              opacity = 1,
+              color = "white", 
+              fillOpacity = 0.7,
+              highlight = highlightOptions(fillOpacity = 1,
+                                           bringToFront = T),
+              popup = paste0("Place: ", edu_attain_tract$tractnames, "<br>",
+                             "Census Tract: ", edu_attain_tract$NAME, "<br>",
+                             "Percent BA or Higher: ", paste0(edu_attain_tract$percent,"%"), "")) %>% 
+  addLegend("topright", pal = map_pal_rev, values = ~percent, 
+            title = "Percent BA or Higher", opacity = 0.7,
+            labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE), suffix = "%")) %>% 
+  addResetMapButton()
+
+
+edu_attain_map
+
+
+```
+</br></br>
+The [full profile](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"} provides additional education measures including school enrollment in the City of Charlottesville and AP and Dual Enrollment, Suspensions, and Chronic Absenteeism in Charlottesville Public Schools.
+
+## Decent Standard of Living: Economic Security and Housing Profile
+
+Living standards encompass access to the material needs of life—housing, security, goods and services. It is captured through measures on earnings, household income, homeownership and renting. Data on earnings and income contextualize the struggle some residents face to achieve economic stability and to afford basic necessities. Data on home ownership and housing burden point to the pressing challenges around housing affordability.
+
+### Earnings and Income
+
+Median earnings represent the midpoint of all household incomes, meaning half of households earn more and half earn less than that amount. The median is generally considered a more representative measure of typical income compared to the average, as it's not affected by extreme outliers (very high or low incomes). The median personal earnings of Charlottesville residents vary significantly by sex and by race.
+
+```{r earnings-race, results = 'asis'}
+#| fig-height: 6
+# Median personal earnings, by sex and race ----
+med_earnings_race_county <- read_csv("regional-equity-profile/data/cville_med_earnings_race_county_2023.csv") %>%
+  mutate(estimate = round(estimate, -2))
+
+med_earnings_race_county <- med_earnings_race_county %>% 
+  filter(race != "White") %>% 
+  mutate(race = factor(race, levels = c("White, Not Hispanic or Latino", "Mutiracial", "Hispanic or Latino", "Black", "Asian"),
+                       labels = c("White", "Mutiracial", "Hispanic", "Black", "Asian"))) %>% 
+  arrange(desc(race))
+
+med_earnings_chart <- med_earnings_race_county %>% 
+  hchart('bar', hcaes(x = race, y = estimate, group = sex), pointWidth = 15) %>% 
+  hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 70000,
+           title = list(enabled = FALSE),
+           opposite = TRUE) %>%
+  hc_colors(c("#b2b8be","#3B8EA5","#005191")) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + '$' + this.y + '</b>'
+  }")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '${y:,f}', enabled = TRUE))) %>%
+  hc_title(text = 'Median Personal Earnings by Sex and Race',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = source_acs,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+med_earnings_chart
+
+
+```
+
+### Median Household Income
+
+While median personal earnings quantify well-being at the individual level, economic power is often pooled within family units. And many tax and policy interventions are monitored at the household level. Below, the median household income is provided to more directly relate financial well-being to the cost of living in the area.
+
+#### Median Household Income by Census Tract
+```{r med-income-rank}
+#| column: margin
+
+# Median household income by tract ----
+med_hhinc_tract <- read_csv("regional-equity-profile/data/cville_med_hhinc_tract_2023.csv") %>%
+  filter(group == "All Households") %>%
+  mutate(GEOID = as.character(GEOID),
+         estimate = round(estimate, -3))
+
+med_hhinc_tract <- med_hhinc_tract %>%
+  left_join(cville_geo, by = "GEOID") %>% 
+  st_as_sf()
+
+med_hhinc_rank_data <- med_hhinc_tract %>% 
+  arrange(desc(estimate)) %>% 
+  st_drop_geometry
+
+med_hhinc_rank <- med_hhinc_rank_data %>%
+  mutate(color = "") %>% 
+  select(c(tractnames, color, estimate)) %>%
+  gt() %>% 
+  data_color(
+    columns = estimate,
+    target_columns = color,
+    direction = "column",
+    palette = pal_inc,
+  )  %>% 
+  fmt_currency(
+    columns = estimate,
+    currency = currency(
+      html = "&#36;",
+      default = "$"
+    ),
+    decimals = 0
+  ) %>% 
+  cols_label(
+    estimate = "Med Household Income", tractnames = "Census Tract",
+    color = ""
+  ) %>%
+  cols_width(
+    tractnames ~ px(155)
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(2:3), cells_body(2:3))
+  ) %>% 
+  tab_options(table.font.size = pct(75),
+              data_row.padding = px(3))
+
+med_hhinc_rank
+
+```
+
+```{r med-income-tract, results = 'asis'}
+#| fig-height: 6
+
+map_pal <- colorBin(pal_inc, domain = med_hhinc_tract$estimate, reverse = FALSE)
+map_pal_rev <- colorBin(pal_inc, domain = med_hhinc_tract$estimate, reverse = TRUE)
+
+med_hhinc_map <- med_hhinc_tract %>%
+  leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  addPolygons(fillColor = ~map_pal(estimate),
+              weight = 1,
+              opacity = 1,
+              color = "white", 
+              fillOpacity = 0.7,
+              highlight = highlightOptions(fillOpacity = 1,
+                                           bringToFront = T),
+              popup = paste0("Place: ", med_hhinc_tract$tractnames, "<br>",
+                             "Census Tract: ", med_hhinc_tract$NAME, "<br>",
+                             "Median Household Income: ", paste0("$", prettyNum(med_hhinc_tract$estimate, big.mark=",", preserve.width="none")))) %>% 
+  addLegend("topright", pal = map_pal_rev, values = ~estimate, 
+            title = "Median Household Income", opacity = 0.7,
+            labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE), prefix = "$")) %>% 
+  addResetMapButton()
+
+
+med_hhinc_map
+
+
+```
+
+</br></br>
+As with personal earnings, data on median household income by race reveal troubling racial and ethnic disparities. 
+
+```{r med-income-race, results = 'asis'}
+# Median household income by Race ----
+med_hhinc_county <- read_csv("regional-equity-profile/data/cville_med_hhinc_county_2023.csv") %>%
+  mutate(estimate = round(estimate, -2))
+  
+med_hhinc_county <- med_hhinc_county %>%
+  filter(!group %in% c("White", "American Indian and Alaska Native", "NHPI", "Other")) %>% 
+  mutate(group = factor(group, levels = c("White, Not Hispanic or Latino", "Multiracial", "Hispanic or Latino", "Black", "Asian", "All Households"),
+                       labels = c("White", "Multiracial", "Hispanic", "Black", "Asian", "All Households")),
+         text = paste0("$", prettyNum(estimate, big.mark=",", preserve.width="none")))
+
+med_hhinc_chart <- med_hhinc_county %>% 
+  hchart('column', hcaes(x = group, y = estimate, label = text)) %>% 
+  hc_legend(enabled = FALSE) %>%
+  hc_xAxis(categories = c('All Residents', 'Asian', 'Black', 'Hispanic',  'Multiracial', 'White'), title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 150000,
+           title = list(text = "Median Household Income", style = list(fontSize = '1.2em')),
+           labels = list(format = '${text}')) %>%
+  hc_colors(c('#6CC08B')) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '${y:,f}', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>Median Household Income: <b>' + '$' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = 'Median Household Income by Race/Ethnicity',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = source_acs,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+med_hhinc_chart
+
+
+```
+
+### Struggling Families: Asset Limited, Income Constrained, Employed (ALICE)
+
+Comprehensive measures of financial hardship must consider both income and the broader cost of living: United Way developed the asset limited, income constrained, employed (ALICE) threshold for this purpose. The [ALICE threshold](https://www.unitedforalice.org/overview){target="_blank"} is calibrated to specific localities, and represents the lowest possible income that households need to earn to afford their basic needs. These essentials include the costs of housing, healthcare, food, transportation, technology, taxes, and childcare.
+
+Many households with incomes below their local cost of living threshold, but above the federal poverty line may not be traditionally thought of as financially burdened. Because their incomes are above the federal poverty line, these households do not qualify for some federal assistance programs and their disadvantaged financial status is often overlooked by local governments. Inequities are amplified when local government interventions neglect the burdens of households who are working hard, and earning above the federal poverty threshold, but still not enough to meet their family’s basic needs.
+
+The ALICE threshold, or the real cost of living, for the City of Charlottesville has increased over the past decade. In 2010, this threshold for survival was $45,000 for households under 65; this grew to <b>$69,000 in 2023</b>. The percentages of households with incomes above the poverty line and under the ALICE threshold in Charlottesville differs across race and ethnicity.
+
+```{r alice-race, results = 'asis'}
+# ALICE households by Race ----
+ALICE_households <- read_csv("regional-equity-profile/data/cville_ALICE_households_by_race_2023.csv")
+
+ALICE_households <- ALICE_households %>% 
+  mutate(level = case_when(level == "above_alice_households" ~ "above",
+                           level == "alice_households" ~ "alice",
+                           level == "poverty_households" ~ "poverty",
+                           .default = level))
+
+ALICE_households <- ALICE_households[order(ALICE_households$level),]
+
+
+ALICE_households_chart <- ALICE_households %>% 
+  arrange(desc(level)) %>% 
+  mutate(group = factor(group,
+                       levels = c("Asian", "Black", "Hispanic", "2+ Races", "White", "All"),
+                       labels = c("Asian", "Black", "Hispanic", "Multiracial", "White", "All Households")),
+         level = factor(level, levels = c("above", "alice", "poverty"),
+                        labels = c("Above ALICE", "ALICE", "Poverty")),
+  text = case_when(percent >= 1 ~ paste0(round(percent, 0), "%"),
+                   percent < 1 ~ paste0(round(percent, 1), "%"))) %>%
+  hchart('column', hcaes(x = group, y = percent, group = level, label = text), stacking = 'normal') %>% 
+  hc_legend(align = "center", verticalAlign = "top", reversed = TRUE) %>%
+  hc_xAxis(categories = c('All Residents', 'Asian', 'Black', 'Hispanic',  'Multiracial', 'White'), title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 100,
+           title = list(enabled = FALSE),
+           labels = list(format = '{text}%')) %>%
+  hc_colors(c("#b2b8be", "#3B8EA5", "#005191")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: .0f}%', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = 'ALICE Households by Race/Ethnicity',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Data Sources: ALICE Threshold, 2023; U.S. Census Bureau, American Community Survey, 2023",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+ALICE_households_chart
+
+
+```
+
+### Housing: Renters and Owners
+
+Housing costs are one of the primary drivers of the rising costs of living. Housing is a significant expense, and in our housing affordability crisis there can be limited options for those families who are not earning enough to meet the area’s rising costs.
+
+[Zillow’s observed rent index (ZORI)](https://www.zillow.com/research/data/) is a measure of a locality’s representative market-rate rent.
+
+```{r zillow-rent, results = 'asis'}
+#| fig-height: 5.5
+
+# Zillow Observed Rent Index (ZORI), 2015-2024 ----
+zillow_rent <- read_csv("regional-equity-profile/data/zillow_rent_2015_2024.csv") %>% 
+  filter(RegionName %in% c("Charlottesville City", "Virginia", "United States")) %>% 
+  rename_with(~ substr(.x, start = 1, stop = 4), ends_with("06-30")) %>% 
+  pivot_longer(cols = "2015":"2024") %>% 
+  mutate(name = as.numeric(name),
+         value = round(value, -1)) %>% 
+  rename(year = name, rent = value)
+
+zillow_rent_chart <- zillow_rent %>% 
+  hchart("line", hcaes(x = year, y = rent, group = RegionName)) %>% 
+  hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(title = list(enabled = FALSE),
+           labels = list(format = '${text}')) %>%
+  hc_colors(c("#005191", "#b2b8be", "#3B8EA5")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '${y: ,f}', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  # hc_tooltip(formatter = JS("function(){
+  # return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  # }")) %>%
+  hc_title(text = 'Zillow Observed Rent Index (ZORI): 2015-2024',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Data Source: Zillow Observed Rent Index (ZORI), 2015-2024",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+zillow_rent_chart
+  
+```
+
+Many residents face economic hardship over rising rents, but these burdens are not equally shared. 
+
+#### Gross Rent by Census Tract
+```{r rent-rank}
+#| column: margin
+
+# Gross Rent by tract ----
+rent_tract <- read_csv("regional-equity-profile/data/cville_gross_rent_tract_2023.csv") %>%
+  mutate(GEOID = as.character(GEOID),
+         estimate = round(estimate, -2))
+
+rent_tract <- rent_tract %>%
+  left_join(cville_geo, by = "GEOID") %>% 
+  st_as_sf()
+
+rent_rank_data <- rent_tract %>% 
+  arrange(desc(estimate)) %>% 
+  st_drop_geometry
+
+rent_rank <- rent_rank_data %>%
+  mutate(color = "") %>% 
+  select(c(tractnames, color, estimate)) %>%
+  gt() %>% 
+  data_color(
+    columns = estimate,
+    target_columns = color,
+    direction = "column",
+    palette = pal_inc,
+  )  %>% 
+  fmt_currency(
+    columns = estimate,
+    currency = currency(
+      html = "&#36;",
+      default = "$"
+    ),
+    decimals = 0
+  ) %>% 
+  cols_label(
+    estimate = "Gross Rent", tractnames = "Census Tract",
+    color = ""
+  ) %>%
+  cols_width(
+    tractnames ~ px(160)
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(2:3), cells_body(2:3))
+  ) %>% 
+  tab_options(table.font.size = pct(75),
+              data_row.padding = px(3))
+
+rent_rank
+
+```
+
+```{r rent-tract, results = 'asis'}
+#| fig-height: 6
+
+map_pal <- colorBin(pal_inc, domain = rent_tract$estimate, reverse = FALSE)
+map_pal_rev <- colorBin(pal_inc, domain = rent_tract$estimate, reverse = TRUE)
+
+rent_map <- rent_tract %>%
+  leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  addPolygons(fillColor = ~map_pal(estimate),
+              weight = 1,
+              opacity = 1,
+              color = "white", 
+              fillOpacity = 0.7,
+              highlight = highlightOptions(fillOpacity = 1,
+                                           bringToFront = T),
+              popup = paste0("Place: ", rent_tract$tractnames, "<br>",
+                             "Census Tract: ", rent_tract$NAME, "<br>",
+                             "Gross Rent: ", paste0("$", prettyNum(rent_tract$estimate, big.mark=",", preserve.width="none")))) %>% 
+  addLegend("topright", pal = map_pal_rev, values = ~estimate, 
+            title = "Gross Rent", opacity = 0.7,
+            labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE), prefix = "$")) %>% 
+  addResetMapButton()
+
+
+rent_map
+
+```
+</br></br>
+The impact of high rental costs on economic security is evident in estimates of how much of a household’s income goes towards housing. A household is <b>rent burdened if 30% or more of their monthly income is spent on housing</b>. If these costs are over 50% of household income, they are considered severely burdened by the cost of housing. The number of rent burdened households varies geographically across census tracts in Charlottesville. 
+
+```{r rent-burden, results = 'asis'}
+#| fig-height: 6
+# Rent Burdened Households ----
+rent_burden_tract <- read_csv("regional-equity-profile/data/cville_rent_burden_tract_2023.csv")  
+
+rent_burden_tract <- rent_burden_tract %>% 
+  mutate(level = factor(level, levels = c("Severely Burdened","Burdened","Not burdened"),
+                        labels = c("Severely Burdened","Burdened","Not burdened")),
+         percent = case_when(percent >= 1 ~ round(percent, 0),
+                   percent < 1 ~ round(percent, 1))
+         )
+rent_burden_tract <- rent_burden_tract[order(rent_burden_tract$tractnames),]
+tractnameslabel <- as.list(rent_burden_tract$tractnames) %>% unique()
+
+rent_burden_chart <- rent_burden_tract %>% 
+  hchart('bar', hcaes(x = tractnames, y = percent, group = level), stacking = 'normal', pointWidth = 20) %>% 
+  hc_legend(align = "center", verticalAlign = "top", reversed = TRUE) %>%
+  hc_xAxis(categories = tractnameslabel, title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 100,
+           title = list(enabled = FALSE),
+           labels = list(format = '{text}%'),
+           opposite = TRUE) %>%
+  hc_colors(c("#005191","#3B8EA5","#b2b8be")) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = 'Rent Burdened Households by Census Tract',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = paste0("Percent values do not add up to 100% because the gross rent as a percentage of household 
+                           income was not computed for some households. ",source_acs),
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+rent_burden_chart
+
+```
+
+Addressing disparities in home ownership rates is critical for ensuring equitable access to economic stability and wealth-building opportunities for all Charlottesville residents.
+
+#### Home Ownership by Census Tract
+```{r tenure-rank}
+#| column: margin
+
+# Home Ownership by tract ----
+tenure_tract <- read_csv("regional-equity-profile/data/cville_tenure_tract_2023.csv") %>%
+  filter(label == "Owner occupied") %>%
+  mutate(GEOID = as.character(GEOID),
+         percent = round(percent,0))
+
+tenure_tract <- tenure_tract %>%
+  left_join(cville_geo, by = "GEOID") %>% 
+  st_as_sf()
+
+tenure_rank_data <- tenure_tract %>% 
+  arrange(desc(percent)) %>% 
+  st_drop_geometry
+
+tenure_rank <- tenure_rank_data %>%
+  mutate(percent = percent/100,
+         color = "") %>% 
+  select(c(tractnames, color, percent)) %>%
+  gt() %>% 
+  data_color(
+    columns = percent,
+    target_columns = color,
+    direction = "column",
+    palette = pal_inc,
+  )  %>% 
+  fmt_percent(
+    columns = percent,
+    decimals = 0
+  ) %>%
+  cols_label(
+    percent = "Percent Home Ownership", tractnames = "Census Tract",
+    color = ""
+  ) %>%
+  cols_width(
+    tractnames ~ px(160)
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(2:3), cells_body(2:3))
+  ) %>% 
+  tab_options(table.font.size = pct(75),
+              data_row.padding = px(3))
+
+tenure_rank
+
+```
+
+```{r tenure-tract, results = 'asis'}
+#| fig-height: 6
+
+map_pal <- colorBin(pal_inc, domain = tenure_tract$percent, reverse = FALSE)
+map_pal_rev <- colorBin(pal_inc, domain = tenure_tract$percent, reverse = TRUE)
+
+tenure_map <- tenure_tract %>%
+  leaflet() %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  addPolygons(fillColor = ~map_pal(percent),
+              weight = 1,
+              opacity = 1,
+              color = "white", 
+              fillOpacity = 0.7,
+              highlight = highlightOptions(fillOpacity = 1,
+                                           bringToFront = T),
+              popup = paste0("Place: ", tenure_tract$tractnames, "<br>",
+                             "Census Tract: ", tenure_tract$NAME, "<br>",
+                             "Percent Home Ownership: ", paste0(tenure_tract$percent,"%"), "")) %>% 
+  addLegend("topright", pal = map_pal_rev, values = ~percent, 
+            title = "Percent Home Ownership", opacity = 0.7,
+            labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE), suffix = "%")) %>% 
+  addResetMapButton()
+
+tenure_map
+
+```
+</br></br>
+The [full profile](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"} provides additional measures on living standards including ALICE thresholds for 2010-2023, and home ownership by race and ethnicity.
+
+## Additional Community Wellbeing Profiles
+
+The partnership between the UVA Center for Community Partnerships, Albemarle County, and the City of Charlottesville also produced two additional profiles:
+
+  - [Albemarle County Community Wellbeing Profile](/albemarle-key-outcomes.html): A report with parallel information on the demographics, health, education, and living standards for Albemarle County.
+  - [Charlottesville and Albemarle Area Community Wellbeing Profile](/combined-area-outcomes.html): A report that expands on the individual locality profiles with trend data for measures related to the well-being of the collective population of the City of Charlottesville and Albemarle County. 

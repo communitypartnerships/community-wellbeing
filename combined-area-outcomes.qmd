@@ -1,0 +1,1212 @@
+---
+title: "Albemarle and Charlottesville Combined Area Profile: Key Outcomes"
+date: "July 2025"
+date-format: "MMMM YYYY"
+image: images/mural.png
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    link-external-newwindow: true
+execute:
+  cache: false
+  echo: false
+  message: false
+  warning: false
+---
+```{r setup}
+#| include: false
+
+# Load packages ----
+library(tidyverse)
+library(readxl)
+library(scales)
+library(janitor)
+library(rcartocolor)
+library(tigris)
+library(sf)
+library(gt)
+library(leaflet)
+library(highcharter)
+
+# This empty chart is necessary to initialize Highcharter in the tabs
+highchart(height = 1)
+
+# Palettes ----
+pal_ahdi <- carto_pal(7, "Purp")
+pal_safe <- c("#332288", "#85C4C9", "#CC6677", "#117733")
+pal_health <- carto_pal(7, "Teal")
+pal_edu <- carto_pal(7, "PinkYl")
+pal_inc <- carto_pal(7, "Emrld")
+
+# Common Items ----
+locality_name <- "Charlottesville & Albemarle County"
+school_district <- "Charlottesville City Schools + Albemarle County Public Schools Combined"
+source_acs <- "Data Source: U.S. Census Bureau, American Community Survey 5-year estimates, 2023"
+source_acs_range <- "Data Source: U.S. Census Bureau, American Community Survey 5-year estimates"
+source_vdoe <- "Data Source: Virginia Department of Education, 2023-2024" 
+
+# County Health Ranking data
+chr_region <- read_csv("regional-equity-profile/datacode/supplemental_downloadsremoved/data/chr_regional_measures.csv")
+
+```
+
+## Introduction
+
+The City of Charlottesville and Albemarle County are deeply intertwined—economically, socially, and environmentally. This interdependence extends to the well-being of all who live and work in either the city or the county. Some public challenges can only be addressed through cross-jurisdictional collaboration. Additionally, some resources are strengthened and bolstered through intentional collaboration. Multiple systems that structure lived experiences of residents—job markets, housing markets, health care infrastructure, and more—operate regionally. In addition to coordination across local governments, the combined Charlottesville-Albemarle region benefits from a rich web of civic organizations, service providers, and regional authorities.
+
+### Full Report PDF
+
+This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [Albemarle and Charlottesville Combined Area Profile](/pdf/regional-profile-draft-sm.pdf){.external target="_blank"}
+
+## Demographics
+
+The people who live in Charlottesville and Albemarle represent the region’s primary assets. Residents bring a multitude of strengths, shape collective needs, and provide available resources to address those needs. Understanding who the community is composed of and how that composition is steadily evolving supports the creation of programs and use of resources that effectively invest in people. The profile begins by examining the population attributes of the estimated 169,533 residents of the city and county combined.^[University of Virginia Weldon Cooper Center for Public Service. (2024). Virginia Population Estimates. Retrieved from [https://coopercenter.org/virginia-population-estimates](https://coopercenter.org/virginia-population-estimates).]
+
+### Race and Ethnicity
+
+African Americans, free and enslaved, constituted the majority of the region’s population during the height of chattel slavery prior to the American Civil War. Post-Civil war, the proportion of African Americans in the area rapidly declined. Black men and women migrated away from the region. This movement was driven by opportunities opening in the North, and lack of opportunities in the South. Since that time, the majority of the population of Charlottesville and Albemarle has identified themselves in the census as white. 
+
+```{r pop-race-1790-2020, results = 'asis'}
+# Region 1790-2020 ----
+region_sheet <- read_excel("regional-equity-profile/data/regional_profile_raceovertime.xlsx", sheet = "regional_data")
+region_1790_2020 <- region_sheet %>% select(!...7) %>% 
+  rename("race_white" = "white",
+         "race_nonwhite" = "nonwhite",
+         "per_white" = "white_per",
+         "per_nonwhite" = "nonwhite_per") %>%
+  pivot_longer(cols = c(starts_with("race"), starts_with("per")),
+               names_to = c('.value', 'label'),
+               names_pattern = '(.*?)_(.*)') %>% 
+  rename("total_pop" = "total",
+         "estimate" = "race",
+         "percent" = "per") %>% 
+  mutate(percent = round(percent, 0),
+         label = case_when(label == "white" ~ "White Population",
+                           label == "nonwhite" ~ "Non-white Population"))
+
+
+region_1790_2020_chart <- region_1790_2020 %>% 
+  hchart("line", hcaes(x = year, y = percent, group = label)) %>% 
+  hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(text = ''), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(title = list(enabled = FALSE),
+           labels = list(format = '{text}%')) %>%
+  hc_colors(c("#3B8EA5","#b2b8be")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: .0f}%', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = 'White and Non-White Population Composition, 1790-2020',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Inherent limitations of and inconsistencies across historical census data collections require 
+             simplifying long-term population trends into ‘White’ and ‘Non-white.’ Data Source: U.S. Census Bureau, Decennial Census, 1790-2020",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+region_1790_2020_chart
+  
+```
+
+Over the past decade, the racial and ethnic composition of Charlottesville and Albemarle has remained steady even as the population has grown. In 2013, with a combined population of 144,300, 12% of residents identified as Black, 5% of residents identified as Asian, 5% as Hispanic or Latino, 2% identified with multiple races, and the remaining 74% identified as white. In 2023, with a combined population of 160,000, the proportion of residents by race and ethnicity exhibited minimal shifts.
+
+```{r race-ethn-2013-2023, results = 'asis'}
+# Race/Ethnicity ----
+ethn_race_2012_2023 <- read_csv("regional-equity-profile/data/region_ethn_race_2012_2023.csv")
+ethn_race_2012_2023 <- ethn_race_2012_2023 %>% 
+  mutate(year = factor(year, levels = c("2012","2013","2014","2015","2016",
+                                        "2017","2018","2019","2020","2021","2022", "2023")),
+         label = factor(label, 
+                        levels = c("Not Hispanic or Latino: Some other race alone",
+                                   "Not Hispanic or Latino: Native Hawaiian and Other Pacific Islander alone",
+                                   "Not Hispanic or Latino: American Indian and Alaska Native alone",
+                                   "Not Hispanic or Latino: Asian alone",
+                                   "Not Hispanic or Latino: Two or more races", 
+                                   "Hispanic or Latino",
+                                   "Not Hispanic or Latino: Black or African American alone", 
+                                   "Not Hispanic or Latino: White alone" ), 
+                        labels = c("Other Racial Identities", "Native Hawaiian/Pacific Islander", "American Indian/Alaskan Native","Asian", "Multiracial","Hispanic", "Black","White")),
+         percent_moe = round(100 * (moe / total_pop), digits = 2),
+         text = case_when(percent >= 1 ~ paste0(round(percent, 0), "%"),
+                          percent < 1 ~ "")
+  )
+
+ethn_race_2012_2023_chart <- ethn_race_2012_2023 %>% 
+  filter(year != "2012") %>% 
+  arrange(year) %>% 
+  hchart('column', hcaes(x = year, y = percent, group = label), stacking = 'normal', pointWidth = 50) %>% 
+  hc_legend(align = "center", verticalAlign = "top", reversed = TRUE) %>%
+  hc_xAxis(title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 100,
+           title = list(enabled = FALSE),
+           labels = list(format = '{text}%')) %>%
+  hc_colors(c("#43daed","#b69cfd","#fbb12d","#009ddc","#ee2b75","#b4cd23","#ff641e","#b2b8be")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: .0f}%', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = 'Population Composition by Race & Ethnicity, 2013-2023',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Data Source: U.S. Census Bureau, American Community Survey 5-year estimates, 2013-2023",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+ethn_race_2012_2023_chart
+
+
+```
+
+See the [full report](/pdf/regional-profile-draft-sm.pdf){.external target="_blank"} for additional measures on language and linguistic isolation, and the prevalence of disabilities among residents in the combined Charlottesville-Albemarle Area. 
+
+## American Human Development Index (AHDI)
+
+The American Human Development Index (AHDI) is a metric that assesses well-being along three axes: health, access to knowledge, and living standards. This metric was created by [Measure of America of the Social Science Research Council](https://measureofamerica.org/human-development/){target="_blank"} to be estimated at geographic levels, such as states and counties, and to speak directly to the American context of an affluent democracy.^[“About Human Development.” Measure of America, [https://measureofamerica.org/human-development/](https://measureofamerica.org/human-development/)]
+
+Each component of AHDI—health, access to knowledge, and living standards—is scored on a 0 to 10 scale for a specific geography.^[See the Measure of America Methodological Notes for the complete methodology: [https://measureofamerica.org/wp-content/uploads/2010/11/The-Measure-of-America-2010-2011-Methodological-Notes.pdf](https://measureofamerica.org/wp-content/uploads/2010/11/The-Measure-of-America-2010-2011-Methodological-Notes.pdf)] The AHDI is the average of these three scores: each component carries equal weight in the composite index as all carry equal importance for community well-being.
+
+The following table shows AHDI for Albemarle County, the City of Charlottesville, the combined region, and Virginia overall. 
+
+```{r ahdi-benchmarks}
+# AHDI Benchmarks ----
+ahdi_benchmarks <- read_csv("regional-equity-profile/data/ahdi_benchmarks_2023.csv")
+ahdi_region <- read_csv("regional-equity-profile/data/ahdi_region_counties_2023.csv") %>% 
+  filter(GEOID == "003;540") %>% 
+  rename(name = locality)
+
+ahdi_table <- rbind(ahdi_region, ahdi_benchmarks)
+
+region_bench <- c("003;540","1","51","51003","51540")
+
+# AHDI Benchmarks: Albemarle ----
+ahdi_table_region <- ahdi_table %>%
+  filter(GEOID %in% region_bench) %>%
+  mutate(name_order = fct_relevel(name, c("Charlottesville & Albemarle Combined", "Albemarle", "Charlottesville", "Virginia", "United States"))) %>%
+  arrange(name_order) %>%
+  mutate(`AHDI` = round(ahdi, 1),
+         across(lifeexp_est:enrollment_per, ~ round(.x, 0))) %>% 
+  select(name, `AHDI`, lifeexp_est:med_earnings) %>% 
+  rename(`Life Expectancy (years)` = lifeexp_est,
+         `At Least High School Diploma` = hs_grad_per,
+         `At Least Bachelor’s Degree` = bac_deg_per,
+         `Graduate Degree` = grad_deg_per,
+         `School Enrollment` = enrollment_per, 
+         `Median Earnings (2023 $)` = med_earnings)
+  
+ahdi_table_region %>%
+  select(name:`Median Earnings (2023 $)`) %>% 
+  mutate(across(`At Least High School Diploma`:`School Enrollment`, ~ (as.numeric(.x)/100))) %>%
+  gt(rowname_col = "name") %>%
+  # tab_row_group(label = "Local",
+  #               rows = c("Albemarle", "Charlottesville")) %>% 
+  # tab_row_group(label = "State & US",
+  #               rows = c("Virginia", "United States")) %>% 
+  # tab_row_group(label = "Benchmark Counties",
+  #               rows = 5:12) %>%
+  #   row_group_order(groups = c("Local", "State & US", "Benchmark Counties")) %>% 
+  tab_spanner(
+    label = "Health",
+    columns = c(`Life Expectancy (years)`)
+  ) %>% 
+  tab_spanner(
+    label = "Access to Knowledge",
+    columns = c(`At Least High School Diploma`, `At Least Bachelor’s Degree`, `Graduate Degree`, `School Enrollment`)
+  ) %>%
+  fmt_percent(
+    columns = `At Least High School Diploma`:`School Enrollment`,
+    decimals = 0
+  ) %>% 
+  tab_spanner(
+    label = "Living Standards",
+    columns = c(`Median Earnings (2023 $)`)
+  ) %>% 
+  fmt_currency(
+    columns = `Median Earnings (2023 $)`,
+    currency = currency(
+      html = "&#36;",
+      default = "$"
+    ),
+    decimals = 0
+  ) %>% 
+  cols_width(
+    name ~ px(150)
+  ) %>% 
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(), cells_body())
+  ) %>%
+  data_color(
+    columns = `Life Expectancy (years)`,
+    direction = "column",
+    method = "numeric",
+    palette = c("#D1EEEA", "#769DB1")
+  ) %>% 
+  data_color(
+    columns = `At Least High School Diploma`:`School Enrollment`,
+    direction = "column",
+    method = "numeric",
+    palette = c("#FAF0F1", "#CC6677")
+    # palette = pal_edu
+  ) %>% 
+  data_color(
+    columns = `Median Earnings (2023 $)`,
+    direction = "column",
+    method = "numeric",
+    palette = c("#E7F1EB", "#117733")
+    # palette = pal_inc
+  ) %>% 
+  data_color(
+    columns = `AHDI`,
+    direction = "column",
+    method = "numeric",
+    palette = c("#EBE9F3", "#332288")
+    # palette = pal_ahdi
+  ) %>% 
+  tab_header(
+    title = md("**American Human Development Index: Comparison Across Benchmark Localities**")
+  ) %>% 
+  tab_source_note(
+    source_note = md("Data Sources: *Life Expectancy:* County Health Rankings, 2024. *Education and Earnings:* U.S. Census Bureau, American Community Survey 5-year estimates, 2023.")
+  ) %>% 
+  tab_options(table.font.size = pct(90),
+              data_row.padding = px(5))
+
+
+```
+
+The specific [Charlottesville](/charlottesville-key-outcomes.html) and [Albemarle](/albemarle-key-outcomes.html) Locality Reports show the AHDI for additional benchmark localities and provide comparisons by census tract. 
+
+## A Long and Healthy Life: Health Profile
+
+### Life Expectancy
+
+The primary AHDI indicator of health is life expectancy. Life expectancy at birth is the average number of years a baby born today is expected to live given current mortality patterns. 
+
+The average lifespan in the United States has declined in recent years, giving cause for concern: in 2022, U.S. life expectancy had fallen to 76.4 years, the lowest point in almost twenty years.^[“What’s behind ‘shocking’ U.S. life expectancy decline—and what to do about it.” Harvard School of Public Health, April 13, 2023, [hsph.harvard.edu/news/whats-behind-shocking-u-s-life-expectancy-decline-and-what-to-do-about-it/](https://hsph.harvard.edu/news/whats-behind-shocking-u-s-life-expectancy-decline-and-what-to-do-about-it/)] Experts pointed to the ongoing impacts of the COVID-19 pandemic and rising rates of drug overdoses as major contributors to the striking national decline in life expectancy.^[“Why life expectancy in the US is falling.” Harvard Health Publishing, October 20, 2022, [www.health.harvard.edu/blog/why-life-expectancy-in-the-us-is-falling-202210202835](https://www.health.harvard.edu/blog/why-life-expectancy-in-the-us-is-falling-202210202835)]  
+
+```{r life-exp-time, results = 'asis'}
+# Life Expectancy by Race ----
+chr_locality <- read_csv("regional-equity-profile/datacode/supplemental_downloadsremoved/data/chr_locality_measures.csv")
+
+life_exp_chart <- chr_locality %>% 
+  na.omit() %>% 
+  mutate(life_expectancy = round(life_expectancy, 0)) %>% 
+  hchart("line", hcaes(x = year, y = life_expectancy, group = place)) %>% 
+  hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(title = list(text = 'Life Expectancy (Years)'),
+           labels = list(format = '{text}')) %>%
+  hc_colors(c("#589ACF", "#6E016B", "#FAC484")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: f}', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + ' years old</b>'
+  }")) %>%
+  hc_title(text = 'Average Life Expectancy in Charlottesville, Albemarle, and Virginia',
+           align = 'left') %>%
+  hc_subtitle(text = '2019-2024',
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Data Source: County Health Rankings, 2019-2024",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+life_exp_chart
+
+
+```
+
+### Primary Care and Mental Health Providers
+
+The insufficient provision of primary care and mental health care are growing crises in the United States and are felt most acutely in rural areas of the country. At present, roughly 83 million people in the US lack access to a primary care physician.^[“All hands on deck needed to confront physician shortage crisis.” American Medical Association, Jun 10, 2024, [www.ama-assn.org/practice-management/sustainability/all-hands-deck-needed-confront-physician-shortage-crisis](https://www.ama-assn.org/practice-management/sustainability/all-hands-deck-needed-confront-physician-shortage-crisis)] Similarly, there are long-standing and acute provider shortages within the American mental health care system: the amount of psychiatrists per 100,000 US individuals fell by about 10% from 2003 to 2013.^[Arno Cai, et al. “Trends In Mental Health Care Delivery By Psychiatrists And Nurse Practitioners In Medicare, 2011–19.” Health Affairs 2022 41:9, 1222-1230. Accessed:
+[pmc.ncbi.nlm.nih.gov/articles/PMC9769920/#:~:text=The%20shortage%20is%20projected%20to,14%2C000%E2%80%9331%2C000%20psychiatrists%20in%202024.&text=The%20deficit%20of%20mental%20health,counties%20have%20no%20practicing%20psychiatrists](https://pmc.ncbi.nlm.nih.gov/articles/PMC9769920/#:~:text=The%20shortage%20is%20projected%20to,14%2C000%E2%80%9331%2C000%20psychiatrists%20in%202024.&text=The%20deficit%20of%20mental%20health,counties%20have%20no%20practicing%20psychiatrists)
+] In rural areas, roughly 80% of counties lack practicing psychiatrists.^[Arno Cai, et al.] These trends provide context for understanding changes in mental health and primary care providers in the Charlottesville-Albemarle area. 
+
+The region’s supply of mental health care providers has grown steadily each year since 2016, a roughly 60% increase. At the same time, the region’s supply of primary care physicians has remained static. These trends parallel patterns in Virginia as a whole, though care provider rates are consistently higher in the Charlottesville-Albemarle region. 
+
+However, the state as a whole is consistently ranked low on mental health workforce availability. The most recent report from Mental Health America ranks Virginia 38th, with an estimated 450 individuals for every mental health provider, compared to a national estimate of 340 individuals for every mental health provider.^[Reinert, M, Fritze, D & Nguyen, T. (July 2024). “The State of Mental Health in America 2024.” Mental Health America, Alexandria, VA. [https://mhanational.org/the-state-of-mental-health-in-america/](https://mhanational.org/the-state-of-mental-health-in-america/)]
+
+
+#### Primary Care and Mental Health Care Providers: 2016-2024
+
+```{r providers-time, results = 'asis'}
+#| layout-ncol: 2
+#| fig-height: 4
+
+# Health care providers ----
+chr_doctors_rate <- chr_region %>% 
+  select(region, year, pc_docs_rate, mh_docs_rate) %>% 
+  pivot_longer(pc_docs_rate:mh_docs_rate) %>% 
+  mutate(name = factor(name, levels = c("mh_docs_rate", "pc_docs_rate"), labels = c("Mental Health Doctors", "Primary Care Doctors")),
+         region = case_when(region == "Region" ~ "Charlottesville + Albemarle", 
+                            region == "State" ~ "Virginia"),
+         value = round(value,0)) 
+
+chr_doctors_func <- function(cat, caption) {
+  
+ plot <- chr_doctors_rate %>%
+    filter(region == cat) %>% 
+    hchart("line", hcaes(y = value, x = year, group = name), showInLegend = TRUE) %>% 
+   hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0, max = 600, title = list(text = "Rate per 100,000 people"),
+             labels = list(format = '{text}')) %>%
+  hc_colors(c("#589ACF", "#6E016B")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: f}', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.series.name + ', ' + this.x + '</b></br>Rate per 100,000 people: <b>' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = cat,
+           align = 'left') %>%
+  hc_add_theme(hc_theme_smpl())
+
+  
+  plot
+}
+
+chr_doctors_func("Charlottesville + Albemarle")
+chr_doctors_func("Virginia")
+
+
+```
+
+Data Source: County Health Rankings, 2016-2024
+
+### Health Insurance
+
+Access to multiple high quality health centers like UVA Health and Sentara Healthcare is a major contributor to well-being in Charlottesville and Albemarle. However, accessible and affordable medical services are not universally available to residents, as evidenced by the area’s stark disparities in health insurance coverage. 
+
+#### Residents with No Health Insurance by Race: 2017-2023
+
+```{r health-insurance-time, results = 'asis'}
+#| layout-ncol: 2
+#| fig-height: 3
+
+# Health insurance by race ----
+health_insured_county_race <- read_csv("regional-equity-profile/data/region_health_insured_county_race_2017_2023.csv") %>% 
+  filter(!group %in% c("White alone", "American Indian and Alaska Native alone", "Native Hawaiian and Other Pacific Islander alone", "Some other race alone")) %>%
+   mutate(group = factor(group, levels = c("All", "Asian alone", "Black or African American alone",  "Hispanic or Latino", "Two or more races", "White non Hispanic"),
+                       labels = c("All Residents","Asian", "Black", "Hispanic", "Multiracial", "White")),
+         percent_uninsured = round(percent_uninsured,0))
+
+colors_pal <- c("#b2b8be", "#009ddc", "#ff641e", "#b4cd23", "#ee2b75", "#fbb12d")
+insured_plot_func <- function(cat, color_val) {
+  
+ plot <- health_insured_county_race %>%
+    filter(group == cat) %>% 
+    hchart("line", hcaes(y = percent_uninsured, x = year, group = group), showInLegend = FALSE) %>% 
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0, max = 40, title = list(text = "Percent Uninsured"),
+             labels = list(format = '{text}%')) %>%
+  hc_colors(colors_pal[color_val]) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: f}%', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.series.name + ', ' + this.key + '</b></br>Percent Uninsured: <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = cat,
+           align = 'left') %>%
+  # hc_subtitle(text = '2018-2023',
+  #             align = "left",
+  #             style = list(fontSize = '1.4em')) %>%
+  # hc_caption(text = source_acs,
+  #            align = "right",
+  #            style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+  
+  plot
+}
+
+insured_plot_func("All Residents", 1)
+insured_plot_func("Asian", 2)
+
+insured_plot_func("Black", 3)
+insured_plot_func("Hispanic", 4)
+
+insured_plot_func("Multiracial", 5)
+insured_plot_func("White", 6)
+
+
+```
+
+`r source_acs_range`
+
+### Access to Parks and Exercise Opportunities
+
+Access to parks and green spaces is increasingly understood as a vital component of health and wellness. The public health benefits of park access include physical, mental, and environmental well-being. In addition to serving as a place to exercise or experience nature, parks are essential components of regional and neighborhood-level identity, acting as important spaces for community building. 
+
+Opportunities for exercise measures whether an individual has adequate access to parks or recreational facilities, defined here as living within a half mile of a park, within one mile of a recreational facility (if in an urban area), or within three miles of a recreational facility in a rural area.
+
+#### Opportunities for Exercise: Access to Parks or Recreational Facilities
+
+```{r parks-time, results = 'asis'}
+#| layout-ncol: 2
+#| fig-height: 3.5
+
+# Access to Parks or Recreational Facilities ----
+chr_parks <- chr_region %>% 
+  select(region, year, num_exer_access, exer_access_per) %>% 
+  mutate(region = case_when(region == "Region" ~ "Charlottesville + Albemarle", 
+                            region == "State" ~ "Virginia"),
+         exer_access_per = round(exer_access_per,0)) %>%  
+  na.omit()
+
+chr_parks_func <- function(cat) {
+  
+ plot <- chr_parks %>%
+    filter(region == cat) %>% 
+    hchart("line", hcaes(y = exer_access_per, x = year), showInLegend = FALSE) %>%
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0, max = 100, title = list(text = "Percent of Population with Access"),
+             labels = list(format = '{text}%')) %>%
+  hc_colors(c("#589ACF")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: f}%', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>Percent of Population with Access: <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = cat,
+           align = 'left') %>%
+  hc_add_theme(hc_theme_smpl())
+  
+  plot
+}
+
+chr_parks_func("Charlottesville + Albemarle")
+chr_parks_func("Virginia")
+
+```
+
+Data Source: County Health Rankings, 2020-2024
+
+## Access to Knowledge: Education Profile
+
+Educational attainment directly influences employment and earnings, which in turn influence access to housing, food, healthcare, transportation, and more. Charlottesville and Albemarle benefit from a highly educated population overall. However, overall high rates of formal education can conceal the challenges faced by those afforded fewer educational opportunities and support.
+
+### Degree Attainment
+
+The AHDI incorporates formal educational attainment: the percent of the adult population with a high school degree, with a bachelor's degree, and with a graduate degree and the percent of the youth population enrolled in school. The figure below shows the percent of residents aged 25 and over who have attained each degree level across the last five years. 
+
+By these measures, the combined population of Charlottesville and Albemarle has seen increased educational attainment, especially in the percent of the adult population with a four-year college degree. This increase could reflect growth of education among residents, a shift in the composition of who lives in the city and the county, or a combination of both.
+
+
+```{r edu-attain-time, results = 'asis'}
+
+region_edu_attain_county <- read_csv("regional-equity-profile/data/region_edu_attain_county_2018_2023.csv")
+
+edu_attain_chart <- region_edu_attain_county %>% 
+  mutate(percent = round(percent,0),
+         label = factor(label, levels = c("High school graduate or higher", "Bachelor's degree or higher", "Graduate or professional degree"), labels = c("At Least High School Diploma", "At Least Bachelor’s Degree", "Graduate Degree"))) %>% 
+  hchart("line", hcaes(x = year, y = percent, group = label)) %>% 
+  hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(title = list(text = 'Percent of Population 25 yrs and older'),
+           labels = list(format = '{text}%')) %>%
+  hc_colors(c("#193CBC", "#FAC484", "#589ACF")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: f}%', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = 'Educational Attainment in Charlottesville and Albemarle',
+           align = 'left') %>%
+  hc_subtitle(text = '2018-2023',
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = source_acs_range,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+edu_attain_chart
+
+```
+
+The figure below shows how degree attainment varies across residents by race and ethnicity in the combined population. These differences may be due to multiple barriers to higher education, including affordability, geographic accessibility of college and differential experiences with secondary education institutions.
+
+
+```{r med-degree-attain-race, results = 'asis'}
+# Educational Attainment by Race ----
+edu_attain_county <- read_csv("regional-equity-profile/data/region_edu_attain_2023.csv")  %>% 
+  select(-percent) %>% 
+  mutate(label = case_when(label == "High school graduate or higher" ~ "high_school_up",
+                     label == "Bachelor's degree or higher" ~ "bachelors_up",
+                     label == "Graduate or professional degree" ~ "grad")) %>% 
+  pivot_wider(names_from = label, values_from = c(estimate, moe)) %>% 
+  mutate(less_than_hs = pop_25_over - estimate_high_school_up,
+         hs_only = estimate_high_school_up - estimate_bachelors_up) %>% 
+  rename(bachelors_up = estimate_bachelors_up, 
+         group_total = pop_25_over) %>% 
+  select(region_fips, locality, less_than_hs, hs_only, bachelors_up, group_total, year)
+# Return to long, add percents, prep for data viz
+edu_attain_county <- edu_attain_county %>% 
+  pivot_longer(less_than_hs:bachelors_up) %>% 
+  mutate(percent = round(100 * (value / group_total), digits = 2),
+         group = "All") %>% 
+  rename(edu_level = name,
+         estimate = value) %>% 
+  select(region_fips, locality, group, group_total, edu_level, estimate, percent, year)
+
+edu_attain_race_county <- read_csv("regional-equity-profile/data/region_edu_attain_race_2023.csv") %>% 
+  select(-group_total_moe) %>% 
+  rename(group = race)
+
+edu_attain_county_all <- rbind(edu_attain_county, edu_attain_race_county)
+  
+edu_attain_county_all <- edu_attain_county_all %>% 
+  filter(group_total != 0) %>% 
+  filter(group != "White") %>% 
+  mutate(label = factor(edu_level, 
+                        levels = c("bachelors_up","hs_only","less_than_hs"), 
+                        labels = c("Bachelor's degree or higher","High School diploma, no college", "Less than a HS diploma")),
+         group = factor(group,
+                       levels = c("All", "Amer_Indian", "Asian", "Black", "Hispanic", "Multi", "NHPI", "Other", "White_non_hisp"),
+                       labels = c("All Residents", "American Indian", "Asian", "Black", "Hispanic", "Multiracial", "Native Hawaiian/Pacific Islander", "Other Racial Identities", "White")),
+         text = case_when(percent >= 1 ~ paste0(round(percent, 0), "%"),
+                          percent < 1 ~ "")
+  )
+
+edu_attain_chart <- edu_attain_county_all %>% 
+  filter(!group %in% c("Other Racial Identities")) %>% 
+  filter(group_total >= 400) %>% 
+  hchart('column', hcaes(x = group, y = percent, group = label, label = text), stacking = 'normal') %>% 
+  hc_legend(align = "center", verticalAlign = "top", reversed = TRUE) %>%
+  hc_xAxis(categories = c('All Residents', 'Asian', 'Black', 'Hispanic',  'Multiracial', 'White'), title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 100,
+           title = list(enabled = FALSE),
+           labels = list(format = '{text}%')) %>%
+  hc_colors(c("#FAC484", "#EB7F86", "#A059A0")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: .0f}%', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = 'Educational Attainment by Race/Ethnicity for the population 25 years and over',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = source_acs,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+edu_attain_chart
+
+```
+
+
+### School Enrollment
+
+School enrollment measures how many young people, ages 3 to 24 years, currently attend a public school, private school, college or university.^[  Census Bureau data on enrollment ask about elementary school, high school, college, or professional school. Public, private & homeschool are all included. This count excludes vocational, technical or business schools such as trade schools or on the job training.] 
+
+In Charlottesville and Albemarle County, enrollment in formal schooling has remained steady across the last five years, from 84% in 2018 to 86% in 2023. Given the disruption of the worldwide COVID-19 pandemic beginning in March 2020, with the move to online schooling and hybrid school schedules, this stability is reassuring. 
+
+#### School Enrollment in Charlottesville and Albemarle by Age Group: 2018-2023
+
+```{r school-enroll-by-age, results = 'asis'}
+#| layout-ncol: 2
+#| fig-height: 3
+
+# Enrollment by Age ----
+enroll_age <- read_csv("regional-equity-profile/data/region_enroll_ages_2018_2023.csv") %>% 
+  select(year,percent_3_to_4_year_olds_enrolled, percent_5_to_9_year_olds_enrolled,percent_10_to_14_year_olds_enrolled, percent_15_to_17_year_olds_enrolled, percent_18_and_19_year_olds_enrolled, percent_20_to_24_year_olds_enrolled) %>% 
+  pivot_longer(cols = c(percent_3_to_4_year_olds_enrolled:percent_20_to_24_year_olds_enrolled)) %>% 
+  mutate(name = str_remove(name, "_enrolled"),
+         name = str_remove(name, "percent_"),
+         name = str_replace_all(name, "_", " "),
+         value = round(value, 0))
+
+colors_pal <- hue_pal()(6)
+enroll_plot_func <- function(ages, color_val) {
+  
+ plot <- enroll_age %>%
+    filter(name == ages) %>% 
+    hchart("line", hcaes(y = value, x = year, group = name), showInLegend = FALSE) %>% 
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0, max = 100, title = list(text = "Percent Enrolled"),
+             labels = list(format = '{text}%')) %>%
+  hc_colors(colors_pal[color_val]) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: f}%', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.series.name + ', ' + this.x + '</b></br>Percent Enrolled: <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = ages,
+           align = 'left') %>%
+  # hc_subtitle(text = '2018-2023',
+  #             align = "left",
+  #             style = list(fontSize = '1.4em')) %>%
+  # hc_caption(text = source_acs,
+  #            align = "right",
+  #            style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+  
+  plot
+}
+
+enroll_plot_func("3 to 4 year olds", 1)
+enroll_plot_func("5 to 9 year olds", 2)
+
+enroll_plot_func("10 to 14 year olds", 3)
+enroll_plot_func("15 to 17 year olds", 4)
+
+enroll_plot_func("18 and 19 year olds", 5)
+enroll_plot_func("20 to 24 year olds", 6)
+
+
+# enroll_age_plots <- map(as.list(unique(enroll_age$name)), function(x) {
+#   
+#   filtered <- enroll_age %>%
+#     filter(name == x)
+# 
+#   highchart() %>%
+#     hc_add_series(data = filtered,
+#                   hcaes(x = year, y = value, group = name),
+#                   type = "line", 
+#                   showInLegend = FALSE) %>%
+#     hc_yAxis(min = 0, max = 100, title = list(text = "Percent Enrolled"),
+#              labels = list(format = '{text}%')) %>% 
+#     hc_colors(c("#193CBC", "#FAC484", "#589ACF")) %>%
+#     hc_plotOptions(series = list(dataLabels = list(format = '{y: f}%', enabled = TRUE)),
+#                  line = list( marker = list(enabled = TRUE) )) %>%
+#     hc_tooltip(formatter = JS("function(){
+#   return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+#   }")) %>%
+#     hc_add_theme(hc_theme_smpl()) %>% 
+#     hc_title(text = x,
+#              align = 'left')   
+#   
+#   })
+
+# enroll_age_plots
+
+# htmltools::tagList(enroll_age_plots[[1]])
+# htmltools::tagList(enroll_age_plots[[3]])
+
+# for (i in 1:6 )
+# {
+#   print(htmltools::tagList(enroll_age_plots[[i]]))
+# }
+
+
+# hw_grid(enroll_age_plots, rowheight = 300, ncol = 2) %>%
+#   htmltools::browsable()
+
+
+```
+
+`r source_acs_range`
+
+### Child Care
+
+Educational opportunities begin before formal schooling with the availability or absence of early childhood education and quality childcare. Access to affordable childcare and early childhood education is essential for working families, enabling parents, guardians, and other caring adults to maintain stable employment. Childcare and preschools are not tied to residential jurisdiction, so the availability of early childhood education centers and seats is best understood regionally. 
+
+The table below combines the locality reports from Child Care Aware of Virginia as of January 2025. In Charlottesville and Albemarle combined, there were approximately 6,000 slots in child care centers, preschools, and family child care homes.^[Child Care Aware of Virginia notes that  there are groups of child care programs not captured in their totals, including: 1) home-based programs that are neither licensed nor registered, but are eligible to participate in the state Subsidy program, 2) family child care programs that serve four or fewer unrelated children and are not licensed or registered with the state in any capacity, and 3) camp programs that only operate during the summer.] 
+
+
+```{r child-care}
+child_care_loc <- read_csv("regional-equity-profile/datacode/supplemental_downloadsremoved/data/child_care_supply_locality.csv")
+child_care_region <- read_csv("regional-equity-profile/datacode/supplemental_downloadsremoved/data/child_care_supply_region.csv") %>% 
+  mutate(location = locality_name)
+
+child_care <- rbind(child_care_loc, child_care_region) %>% 
+  pivot_wider(values_from = centers:seats, names_from = location) %>% 
+  clean_names() %>% 
+  select(type,centers_albemarle,seats_albemarle,centers_charlottesville,seats_charlottesville,centers_charlottesville_albemarle_county,seats_charlottesville_albemarle_county)
+
+child_care %>%
+  gt(rowname_col = "type") %>%
+  tab_spanner(
+    label = "Albemarle",
+    columns = centers_albemarle:seats_albemarle
+  ) %>%
+  tab_spanner(
+    label = "Charlottesville",
+    columns = centers_charlottesville:seats_charlottesville
+  ) %>%
+  tab_spanner(
+    label = "Combined",
+    columns = centers_charlottesville_albemarle_county:seats_charlottesville_albemarle_county
+  ) %>%
+  tab_style(
+    style = cell_text(align = "center", v_align = "middle"),
+    locations = list(cells_column_labels(), cells_body())
+  ) %>%
+  cols_label(
+    centers_albemarle = "Centers",
+    seats_albemarle = "Seats",
+    centers_charlottesville = "Centers",
+    seats_charlottesville = "Seats",
+    centers_charlottesville_albemarle_county  = "Centers",
+    seats_charlottesville_albemarle_county = "Seats"
+  ) %>% 
+  tab_header(
+    title = md("**Child Care Supply**")
+  ) %>%
+  tab_source_note(
+    source_note = md("Data Source: Child Care Aware of Virginia")
+  )
+
+```
+
+### Civil Society
+
+A thriving environment provides opportunities for adults to make social connections, volunteer in their communities, and engage civically. Social capital, or the norms, obligations, and information that develop within a network of citizens, promotes collective action, economic growth, institutional accountability, and individual well-being. The presence of voluntary associations is one common indicator of a community’s social capital. Charlottesville and Albemarle benefit from a robust civic sector, with more than 200 membership organizations, or more than 13 organizations per 10,000 people.
+
+```{r social, results = 'asis'}
+
+chr_social <- chr_region %>% 
+  select(region, year, soc_assoc, soc_assoc_rate)
+
+chr_social_chart <- chr_social %>% 
+  filter(region == "Region") %>% 
+  filter(year >= 2017) %>%
+  hchart("line", hcaes(x = year, y = soc_assoc), showInLegend = FALSE) %>% 
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0, max = 400, title = list(text = 'Number of Organizations'),
+           labels = list(format = '{text}')) %>%
+  hc_colors(c("#6E016B")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: f}', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>Number of Organizations: <b>' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = 'Civic Sector Membership Organizations in Charlottesville and Albemarle',
+           align = 'left') %>%
+  hc_subtitle(text = '2017-2024',
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Data Source: County Health Rankings, 2017-2024",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+chr_social_chart
+
+```
+
+## Decent Standard of Living: Economic Security and Housing Profile
+
+A decent standard of living is centered on income—a means to meet essential needs like housing, security, and food. Standard of living is captured in the AHDI through measures on earnings. This Charlottesville-Albemarle regional report supplements data on earnings and income with measures of housing availability, affordability, and stability, centering the basic need of safe shelter. 
+
+### Earnings and Income
+
+The steady growth in median personal earnings between 2012 and 2023 speaks to the ongoing expansion of economic opportunities in Charlottesville and Albemarle. Median earnings represent the value for which half of workers earn more and half earn less. Consistent increases in median personal earnings are visible both before and after adjusting earnings for inflation.
+
+```{r earnings-time, results = 'asis'}
+region_med_earnings <- read_csv("regional-equity-profile/data/region_med_earnings_2012_2023.csv") %>% 
+  pivot_longer(med_earnings_est:med_earn_adjusted_2023) %>% 
+  mutate(pos = case_when(name == "med_earn_adjusted_2023" ~ 1,
+                         name == "med_earnings_est" ~ -1
+                         ),
+         name = case_when(name == "med_earnings_est" ~ "Median Personal Earnings",
+                          name == "med_earn_adjusted_2023" ~ "Median Personal Earnings (Inflation-Adjusted, 2023 $)"),
+         value = round(value,0)
+         )
+
+med_earnings_chart <- region_med_earnings %>% 
+  hchart("line", hcaes(x = year, y = value, group = name)) %>% 
+  hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0, max = 60000, title = list(text = 'Median Personal Earnings'),
+           labels = list(format = '${text}')) %>%
+  hc_colors(c("#3B8EA5","#b2b8be")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '${y: ,f}', enabled = TRUE)
+                               # dashStyle = 'Dash', 'Solid'
+                               ),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.x + '</b></br>' + this.series.name + ': <b>$' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = 'Median Personal Earnings: 2012-2023',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = source_acs,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+med_earnings_chart
+
+```
+
+Median earnings reflect the wages or salaries individuals receive from work. Median household income arises from the combined earnings of members of a household, along with other sources of income including interest and trusts, and retirement income and social security. There are significant racial and ethnic disparities in median household incomes in Charlottesville and Albemarle.
+
+```{r med-income-race, results = 'asis'}
+# Median household income by Race ----
+med_hhinc_county <- read_csv("regional-equity-profile/data/region_med_hhinc_2023.csv") %>%
+  mutate(estimate = round(median_hhinc, -2))
+  
+med_hhinc_county <- med_hhinc_county %>%
+  filter(!group %in% c("whitealone", "aianalone", "nhpialone", "otheralone")) %>%
+  mutate(
+    group = factor(group, levels = c("whitenhalone", "multialone", "hispanic", "blackalone", "asianalone", "overall"),
+                       labels = c("White", "Multiracial", "Hispanic", "Black", "Asian", "All Households"))
+  )
+
+med_hhinc_chart <- med_hhinc_county %>% 
+  hchart('column', hcaes(x = group, y = estimate)) %>% 
+  hc_legend(enabled = FALSE) %>%
+  hc_xAxis(categories = c('All Residents', 'Asian', 'Black', 'Hispanic',  'Multiracial', 'White'), title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 150000,
+           title = list(text = "Median Household Income", style = list(fontSize = '1.2em')),
+           labels = list(format = '${text}')) %>%
+  hc_colors(c('#6CC08B')) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '${y:,f}', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>Median Household Income: <b>' + '$' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = 'Median Household Income by Race/Ethnicity',
+           align = 'left') %>%
+  hc_subtitle(text = locality_name,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = source_acs,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+med_hhinc_chart
+
+
+```
+
+### Where People Live and Work
+
+The combined Charlottesville-Albemarle area enjoys a robust labor market. Not all local workers live within the city and county boundaries, and not all employed residents of the area work in the two localities. The figure below shows the number of working individuals who both live and work within the city and county boundaries, the number who live in the area but work outside of it, and the number who live outside of Charlottesville and Albemarle but work in the city and county limits.
+
+```{r commute-time, results = 'asis'}
+## Inflow/outflow ----
+region_commute <- read_csv("regional-equity-profile/datacode/supplemental_downloadsremoved/data/inflow_outflow_region.csv") %>%
+  pivot_wider(names_from = worker_type, values_from = number) %>%
+  mutate(total_ages = (younger + middle_age + older),
+         total_wages = (low_wage + mid_wage + hi_wage))
+
+total_workers <- region_commute %>%
+  group_by(year) %>%
+  summarise(total_workers = sum(total_ages))
+
+region_commute_dat <- region_commute %>%
+  left_join(total_workers) %>%
+  mutate(across(younger:total_ages, ~ round((.x/total_workers) *100, 2), .names = "{col}_percent"),
+         across(younger:hi_wage, ~ round((.x/total_ages) *100, 2), .names = "{col}_per_group"),
+         status = factor(status, levels = c("live_here_work_outside", "live_here_work_here", "live_outside_work_here"), labels = c("Live in Albemarle/Charlottesville and work outside", "Live and work in Albemarle/Charlottesville", "Live outside the area and work in Albemarle/Charlottesville")),
+         year = as.character(year))
+
+region_commute_chart <- region_commute_dat %>% 
+  hchart('column', hcaes(x = year, y = total_ages_percent, group = status), stacking = 'normal') %>% 
+  hc_legend(align = "center", verticalAlign = "top", reversed = TRUE) %>%
+  hc_xAxis(categories = c('2002', '2012', '2022'), title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 100,
+           title = list(enabled = FALSE),
+           labels = list(format = '{text}%')) %>%
+  hc_colors(c("#D8D8D8", "#B4C8A8", "#589ACF")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: .0f}%', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = 'Where People Live and Work in Charlottesville and Albemarle',
+           align = 'left') %>%
+  hc_caption(text = "Data Source: U.S Census Bureau, LEHD Origin-Destination Employment Statistics (LODES), 2002, 2012, 2022",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+region_commute_chart
+
+```
+
+### Housing: Renters and Owners
+
+Income has a broad impact on the choices individuals make. Housing is a significant expense, and in our housing affordability crisis, there often are limited options for those whose wages are not rising enough to meet the regional costs of housing. The figures below show how many households in Charlottesville and Albemarle are homeowners or renters, and of those renters, how many are struggling to make rent. 
+
+```{r tenure-stacked, results = 'asis'}
+#| fig-height: 2
+#| fig-width: 4
+region_tenure <- read_csv("regional-equity-profile/data/region_tenure_2023.csv") %>%
+  mutate(name = factor(label, levels = c("Owner occupied", "Renter occupied"), labels = c("Homeowners", "Renters")))
+
+region_tenure_chart <- region_tenure %>% 
+  hchart('column', hcaes(x = locality, y = percent, group = name), stacking = 'normal') %>% 
+  hc_legend(align = "center", verticalAlign = "top", reversed = TRUE) %>%
+  hc_chart(inverted = TRUE) %>%
+  hc_xAxis(labels = list(enabled = FALSE), title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 100,
+           title = list(enabled = FALSE),
+           labels = list(format = '{text}%'),
+           opposite = TRUE) %>%
+  hc_colors(c("#B4C8A8", "#589ACF")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: .0f}%', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = paste0("Housing Status for Households in ", locality_name),
+           align = 'left') %>%
+  hc_caption(text = source_acs,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+region_tenure_chart
+
+```
+
+In Charlottesville and Albemarle, over half (59%) of households own their homes. Among the 41% of households who are renters, more than half—nearly 12,800 households—were rent-burdened to some degree. A household is considered to be rent-burdened if 30% or more of their monthly income is spent on housing. If these costs are over 50% of household income, they are considered severely burdened by the cost of housing. In our area, 27% of renters—over 6,700 households—were severely burdened. 
+
+```{r rent-burden, results = 'asis'}
+#| fig-height: 2
+#| fig-width: 4
+
+region_rent_burden <- read_csv("regional-equity-profile/data/region_rent_burden_2023.csv") 
+total <- sum(region_rent_burden$estimate)
+
+region_rent_burden <- region_rent_burden %>% 
+  mutate(percent_recalc = round((estimate / total) *100, 1), 
+         level = factor(level, levels = c("Not burdened", "Burdened", "Severely Burdened"), labels = c("Not Burdened: Less than 30% household income", "Burdened: 30% to 49% household income", "Severely Burdened: Over 50% household income")))
+
+rent_burden_chart <- region_rent_burden %>% 
+  hchart('column', hcaes(x = locality, y = percent_recalc, group = level), stacking = 'normal') %>% 
+  hc_legend(align = "center", verticalAlign = "top", reversed = TRUE) %>%
+  hc_chart(inverted = TRUE) %>%
+  hc_xAxis(labels = list(enabled = FALSE), title = list(text = ''), labels = list(style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0,
+           max = 100,
+           title = list(enabled = FALSE),
+           labels = list(format = '{text}%'),
+           opposite = TRUE) %>%
+  hc_colors(c("#B4C8A8", "#DE8A5A", "#CA562C")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: .0f}%', enabled = TRUE))) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
+  }")) %>%
+  hc_title(text = paste0("Rent Burden for Households in ", locality_name),
+           align = 'left') %>%
+  hc_caption(text = source_acs,
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+rent_burden_chart
+
+```
+### Evictions
+
+One of the most severe consequences of rent-burden is eviction, or forced displacement from one’s home. Evictions are a major component of growing regional housing disparities and reflect broader statewide and national histories of exploitation and exclusion. The figure below shows both the number of eviction cases filed by landlord representatives in the Albemarle and Charlottesville General District Courts and the number of eviction judgments—cases granting an eviction. 
+
+The act of filing an eviction case alone has serious and well-documented consequences for tenants, even in instances when forceful removal does not occur.^[“Research shows far-reaching costs of eviction filings to tenants – regardless of the outcome in court.” Poverty Solutions: University of Michigan, July 16, 2024, [poverty.umich.edu/2024/07/16/research-shows-far-reaching-costs-of-eviction-filings-to-tenants-regardless-of-the-outcome-in-court/](https://poverty.umich.edu/2024/07/16/research-shows-far-reaching-costs-of-eviction-filings-to-tenants-regardless-of-the-outcome-in-court/)] Tenants who have an eviction case in their legal record often experience long-term housing instability, as future landlords may use this to reject their housing application.
+
+#### Cases Filed and Eviction Judgments within Local Court Jurisdictions: 2018-2024
+```{r evictions, results = 'asis'}
+#| fig-height: 4
+
+evictions <- read_csv("regional-equity-profile/data/va-evictors-catalog.csv") %>% 
+  group_by(county, filed_year) %>% 
+  summarise(cases_filed = sum(cases_filed),
+            plaintiff_judgments = sum(plaintiff_judgments)) %>% 
+  pivot_longer(cases_filed:plaintiff_judgments) %>% 
+  mutate(name = factor(name, levels = c("cases_filed", "plaintiff_judgments"), labels = c("Cases Filed", "Eviction Judgments")))
+
+evictions_func <- function(cat) {
+  
+ plot <- evictions %>%
+    filter(county == cat) %>% 
+    hchart("line", hcaes(y = value, x = filed_year, group = name)) %>%
+   hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em')),
+           plotBands = list(
+             list(from = 2020, to = 2022, color = "#f1f3f5", label = list(text = "State-wide and<br>Federal Eviction Moritoriums"))
+      )) %>%
+  hc_yAxis(min = 0, max = 1500, title = list(text = ''),
+           labels = list(format = '{text}')) %>%
+  hc_colors(c("#B4C8A8", "#3B8EA5")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: ,f}', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.x + '</b></br>' + this.series.name + ': <b>' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = cat,
+           align = 'left') %>%
+  hc_caption(text = "State-Wide Eviction Moratoriums: Mar 16, 2020-Jun 28, 2020; Aug 10, 2020-Sep 7, 2020; Jan 1, 2021-Jun 30, 2021; Aug 10, 2021-Jun 30, 2022 <br>Federal Eviction Moratorium (CDC Order): Sep 4, 2020-Aug 26, 2021. Data Source: Virginia's General District Courts, 2018-2024",
+             align = "right",
+             style = list(fontSize = '1em')) %>% 
+  hc_add_theme(hc_theme_smpl())
+  
+  plot
+}
+
+evictions_func("Albemarle General District Court")
+evictions_func("Charlottesville General District Court")
+
+```
+
+### People Experiencing Homelessness
+
+The City of Charlottesville and Albemarle County work to address homelessness in collaboration with the broader area’s Continuum of Care (CoC), the Blue Ridge Area Coalition for the Homeless (BRACH), which is the federally-required planning body that oversees the provision of services and programs for unhoused people in the region.^[“What is a Continuum of Care?” National Alliance to End Homelessness, January 14, 2010, endhomelessness.org/resource/what-is-a-continuum-of-care/. The U.S. Department of Housing and Urban Development mandates that homeless services be administered through a CoC, with a HUD-designated lead organization that coordinates with service providers and distributes funding. “Continuum of Care Program.” U.S. Department of Housing and Urban Development, [www.hud.gov/program_offices/comm_planning/coc](https://www.hud.gov/program_offices/comm_planning/coc).]  
+
+In addition to administering federal funds, BRACH oversees the annual point-in-time (PIT) count for the region, which includes Greene, Fluvanna, Louisa, and Nelson, as well as Albemarle and Charlottesville.^[“VA-504 - Charlottesville CoC.” HUD Exchange, [www.hudexchange.info/grantees/va-504/](https://www.hudexchange.info/grantees/va-504/)] While the PIT count is the most consistent source of data on regional homelessness, it is widely recognized that the PIT count underestimates the true number of people experiencing homelessness.^[“How the HUD Point-in-Time Count Underestimates the Homelessness Crisis in America.” National Law Center on Homelessness & Poverty, [homelesslaw.org/wp-content/uploads/2018/10/HUD-PIT-report2017.pdf](https://homelesslaw.org/wp-content/uploads/2018/10/HUD-PIT-report2017.pdf)]  
+
+```{r pit-count, results = 'asis'}
+
+pitcount_2007_2024 <- read_csv("regional-equity-profile/datacode/supplemental_downloadsremoved/data/pitcount_2007_2024.csv")
+pitcount_2007_2024 <- pitcount_2007_2024 %>% 
+  select(co_c_name, sheltered_total_homeless, unsheltered_homeless, overall_homeless, year) %>% 
+  pivot_longer(sheltered_total_homeless:overall_homeless) %>% 
+  mutate(name = factor(name, levels = c("overall_homeless", "sheltered_total_homeless", "unsheltered_homeless"), labels = c("Total", "Sheltered", "Unsheltered")))
+
+pitcount_chart <- pitcount_2007_2024 %>% 
+  hchart("line", hcaes(x = year, y = value, group = name)) %>% 
+  hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0, max = 300, title = list(text = 'Number of People'),
+           labels = list(format = '{text}')) %>%
+  hc_colors(c("#6E016B","#3B8EA5","#B4C8A8")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: ,f}', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.x + '</b></br>' + this.series.name + ': <b>' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = 'Point-in-Time Count of People Experiencing Homelessness',
+           align = 'left') %>%
+  hc_subtitle(text = "Blue Ridge Area Continuum of Care (CoC) including the City of Charlottesville and 
+Counties of Albemarle, Fluvanna, Greene, Louisa, and Nelson",
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Data Source: Annual Homelessness Assessment Report, Point-in-Time Count, U.S. Department of Housing and Urban Development’s<br>Office of Policy Development and Research (PD&R)",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+pitcount_chart
+
+```
+### Living Doubled Up
+
+The most basic categories in the PIT count differentiate between ‘sheltered’ and ‘unsheltered’ homelessness, but these distinctions miss a variety of other living strategies, including doubling up. Living doubled up is defined as living with others because of economic hardship or housing loss and is precarious: a change in circumstances can quickly result in unsheltered homelessness.
+
+Homelessness is increasingly understood in terms of “cycling,” where vulnerable individuals repeatedly move into and out of stable housing.^[McConnaughy, Melanie. “Breaking Cycles of Homelessness: Achieving Stability.” Homelessness Policy Research Institute, 2024, hpri.usc.edu/homeless_research/breaking-cycles-of-homelessness-achieving-stability/] For many, doubling up is one stage of this broader cycle. New approaches to estimating and understanding the prevalence of doubling up are being developed, including estimates derived from American Community Survey microdata.^[Richard, Molly K., et al. 2022. “Quantifying Doubled-Up Homelessness: Presenting a New Measure Using U.S. Census Microdata.” Housing Policy Debate 34 (1): 3–24. doi:10.1080/10511482.2021.1981976.] 
+
+Applying those methods to our CoC region produces an annual estimate of <b>1,826 people living doubled up</b>. Additional efforts are needed to more accurately assess the scale of doubling up specifically in Charlottesville and Albemarle, and to consider targeted interventions to support individuals experiencing this vulnerable living arrangement. 
+
+### McKinney-Vento Act
+
+An additional source for understanding the scope of homelessness locally comes from educational data. The McKinney-Vento Act (MVA) provides federal protections and resources for the educational rights of children and youth experiencing homelessness.^[“McKinney-Vento Act: Quick Reference.” School House Connection, schoolhouseconnection.org/wp-content/uploads/2024/07/McKinney-Vento-Act-Quick-Reference-August-2024.pdf] To administer the program, state and local education agencies capture information on “children and youth who lack a fixed, regular, and adequate nighttime residence, including those who are sharing the housing of others due to loss of housing, economic hardship, or a similar reason; staying in motels, trailer parks, or camp grounds due to the lack of an adequate alternative; staying in shelters or transitional housing; or sleeping in cars, parks, abandoned buildings, substandard housing, or similar settings.”^[42 U.S.C. §11434a(2)] As such, it captures a wider range of unhoused living arrangements than the PIT count, but only for children and youth.
+
+McKinney-Vento data for the combined Charlottesville City Schools and Albemarle County Public Schools captures a notably higher number of young people experiencing homelessness than what is evident in the PIT count. While the data records a decline in students experiencing homelessness in the 2019-20 and 2020-21 school years, the data for these years were impacted by the COVID-19 pandemic. The remote and hybrid learning at the onset of the pandemic reduced the ability for educational staff to recognize housing instability among their students. In the 2022-2023 school year, the most recent data available indicates the number of children in our school systems identified as homeless began trending back up to pre-pandemic levels.
+
+```{r mckinney-vento, results = 'asis'}
+
+mvcounts_dat <- read_csv("regional-equity-profile/datacode/supplemental_downloadsremoved/data/mvcounts_2011_2023.csv") %>% 
+  clean_names()
+mvcounts <- mvcounts_dat %>% 
+  group_by(school_year, data_description) %>% 
+  summarise(value = sum(value)) %>% 
+  ungroup() %>% 
+  mutate(school_year = case_when(school_year == "2020-2021" ~ "2020-21",
+                                 .default = sub("(20.*?)20", "\\1", school_year)))
+
+mvcounts_chart <- mvcounts %>% 
+  hchart("line", hcaes(x = school_year, y = value), showInLegend = FALSE) %>% 
+  hc_xAxis(title = list(text = "School Year"), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0, max = 500, title = list(text = 'Number of Students'),
+           labels = list(format = '{text}')) %>%
+  hc_colors(c("#6E016B")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: f}', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.key + '</b></br>Number of Students: <b>' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = 'McKinney-Vento: Students Experiencing Homelessness Enrolled in Public Schools',
+           align = 'left') %>%
+  hc_subtitle(text = school_district,
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Data Source: U.S. Department of Education",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+mvcounts_chart
+
+```
+
+### Bed Capacity Among Organizations Serving Unhoused Residents
+
+BRACH coordinates an annual HUD-mandated count of beds provided by local homeless services organizations for people experiencing homelessness.^[“Point-in-Time Count and Housing Inventory Count.” HUD Exchange, www.hudexchange.info/programs/hdx/pit-hic/#2024-pit-count-and-hic-guidance] This Housing Inventory Count (HIC) captures the number of year-round beds for emergency shelter and transitional housing, seasonal beds, like those provided through [PACEM](https://pacemshelter.org/about-pacem/) during the winter months, and beds associated with permanent supportive housing programs.
+
+```{r hic-count, results = 'asis'}
+
+hiccount_2007_2024 <- read_csv("regional-equity-profile/datacode/supplemental_downloadsremoved/data/hiccount_2007_2024.csv")
+
+hicount <- hiccount_2007_2024 %>% 
+  filter(bedtype %in% c("total_seasonal_beds", "total_yearround_beds", "total_psh_beds", "total_oph_beds")) %>% 
+  pivot_wider(names_from = bedtype, values_from = beds) %>% 
+  mutate_all(~replace(., is.na(.), 0)) %>% 
+  mutate(permanent_housing = total_psh_beds + total_oph_beds) %>% 
+  select(year, total_yearround_beds, total_seasonal_beds, permanent_housing) %>% 
+  pivot_longer(total_yearround_beds:permanent_housing)
+
+
+hicount_chart <- hicount %>% 
+  filter(year >= 2009) %>% 
+  mutate(pos = case_when((name == "total_seasonal_beds" & ! year %in% c(2009, 2012)) ~ -1,
+                         value %in% c(47,39) ~ -1,
+                         .default = 1
+                         ),
+         bedtype = factor(name, levels = c("total_yearround_beds", "total_seasonal_beds", "permanent_housing"), labels = c("Year-Round Beds", "Seasonal Beds", "Permanent Housing"))) %>% 
+  hchart("line", hcaes(x = year, y = value, group = bedtype)) %>% 
+  hc_legend(align = "center", verticalAlign = "top") %>%
+  hc_xAxis(title = list(enabled = FALSE), labels = list(allowOverlap = TRUE, step = 1, style = list(fontSize = '1.2em'))) %>%
+  hc_yAxis(min = 0, max = 300, title = list(text = 'Number of Beds'),
+           labels = list(format = '{text}')) %>%
+  hc_colors(c("#3B8EA5", "#B4C8A8", "#6E016B")) %>%
+  hc_plotOptions(series = list(dataLabels = list(format = '{y: ,f}', enabled = TRUE)),
+                 line = list( marker = list(enabled = TRUE) )) %>%
+  hc_tooltip(formatter = JS("function(){
+  return '<b>' + this.x + '</b></br>' + this.series.name + ': <b>' + this.y + '</b>'
+  }")) %>%
+  hc_title(text = "Year-Round Beds, Seasonal Beds & Permanent Housing Available for People Experiencing Homelessness",
+           align = 'left') %>%
+  hc_subtitle(text = "Blue Ridge Area Continuum of Care (CoC) including the City of Charlottesville\nand Counties of Albemarle, Fluvanna, Greene, Louisa, and Nelson",
+              align = "left",
+              style = list(fontSize = '1.4em')) %>%
+  hc_caption(text = "Data Source: Annual Homelessness Assessment Report, Housing Inventory Count, U.S. Department of Housing and Urban Development’s<br>Office of Policy Development and Research (PD&R)",
+             align = "right",
+             style = list(fontSize = '1em')) %>%
+  hc_add_theme(hc_theme_smpl())
+
+hicount_chart
+
+```
+The seasonal bed capacity is provided through PACEM and has been fairly stable during this period. The decline in 2021 reflects the transition away from congregate care during the COVID-19 pandemic, given the highly contagious nature of the virus. 
+
+The availability of emergency shelter and transitional housing declined in 2016 and 2017 in response to HUD’s decision to move funds from transitional housing and toward rapid rehousing programs. In the region, the count of transitional housing beds decreased by about 30 in 2016 and again in 2017, as funding impacted the Salvation Army’s Center of Hope and other similar programs. During the pandemic in 2020 and 2021, the availability of emergency beds increased, primarily due to the decision to use the hotel at [Premier Circle](https://pacemshelter.org/pacem-at-premier-circle/) as a non-congregate emergency shelter and a site for supportive services. The Premier Circle project was discontinued in 2023 to prepare for the conversion of the site to a new low-income and supportive housing community, in alignment with the original intent.
+
+While emergency shelter and transitional housing in the region has seen some volatility, the number of beds associated with permanent supportive housing has been increasing. The opening of The Crossings in 2012 added a stable capacity of 30 new beds in 2013, increasing to 35 in 2016. In addition, multiple programs launched or grew in 2018, though many of these new beds are targeted towards specific populations, including programs for veterans experiencing homelessness, for individuals with serious mental illness, and for people living with HIV/AIDS. In addition, since 2016, the Haven has had funding for about 25 beds through rapid rehousing programs. 
+
+## Locality Profiles
+
+The partnership between the UVA Center for Community Partnerships, Albemarle County, and the City of Charlottesville also produced two locality profiles:
+
+  - [Albemarle County Community Wellbeing Profile](/albemarle-key-outcomes.html)
+  - [Charlottesville City Community Wellbeing Profile](/charlottesville-key-outcomes.html)
+
+These reports have additional detailed information on the demographics, health, education, and living standards in each locality. 
+
+

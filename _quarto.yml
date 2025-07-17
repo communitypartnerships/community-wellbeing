@@ -1,0 +1,45 @@
+project:
+  type: website
+  render:
+    - "index.qmd"
+    - "*-outcomes.qmd"
+    - "!regional-equity-profile/"
+  resources: 
+    - "/pdf"
+    - "/images"
+website:
+  open-graph: true
+  search: false
+  title: "Community Wellbeing"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: albemarle-key-outcomes.qmd
+        text: Albemarle County Profile
+      - href: charlottesville-key-outcomes.qmd
+        text: City of Charlottesville Profile
+      - href: combined-area-outcomes.qmd
+        text: Area Profile
+    # right: 
+    #   - href: https://virginiaequitycenter.github.io/cville-equity-atlas/
+    #     text: Charlottesville Regional Data Resources
+    #     icon: box-arrow-up-right
+    #     target: _blank
+  page-footer:
+    background: light
+    left: |
+      [![](/images/uva-ccp-color.png){fig-alt="Center for Community Partnerships at UVA" width=320px }](https://communitypartnerships.virginia.edu/)
+#    center: |
+#      In partnership with [![](/images/alb-seal.png){fig-alt="Albemarle County Seal" width=65px }](https://www.albemarle.org/) [![](/images/charlottesville-seal.png){fig-alt="City of Charlottesville Seal" width=65px }](https://charlottesville.gov/)
+    right:
+      - href: index.qmd
+        text: "Community Wellbeing Profiles Home"
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+
