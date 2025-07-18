@@ -57,7 +57,7 @@ The City of Charlottesville and Albemarle County are deeply intertwined—econom
 
 ### Full Report PDF
 
-This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [Albemarle and Charlottesville Combined Area Profile](/pdf/regional-profile-draft-sm.pdf){.external target="_blank"}
+This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [Albemarle and Charlottesville Combined Area Profile](/pdf/combined-area-profile-final.pdf){.external target="_blank"}
 
 ## Demographics
 
@@ -166,7 +166,7 @@ ethn_race_2012_2023_chart
 
 ```
 
-See the [full report](/pdf/regional-profile-draft-sm.pdf){.external target="_blank"} for additional measures on language and linguistic isolation, and the prevalence of disabilities among residents in the combined Charlottesville-Albemarle Area. 
+See the [full report](/pdf/combined-area-profile-final.pdf){.external target="_blank"} for additional measures on language and linguistic isolation, and the prevalence of disabilities among residents in the combined Charlottesville-Albemarle Area. 
 
 ## American Human Development Index (AHDI)
 

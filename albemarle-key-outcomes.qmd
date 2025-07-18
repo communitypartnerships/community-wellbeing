@@ -84,7 +84,7 @@ Ensuring the full inclusion of residents in the social, economic, and civic life
 
 ### Full Report PDF
 
-This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [Albemarle County Community Wellbeing Profile](/pdf/albemarle-profile-draft-sm.pdf){.external target="_blank"}
+This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [Albemarle County Community Wellbeing Profile](/pdf/albemarle-profile-final.pdf){.external target="_blank"}
 
 ## Demographics
 
@@ -140,7 +140,7 @@ ethn_race_2012_2023_chart
 
 ```
 
-See the [full report](/pdf/albemarle-profile-draft-sm.pdf){.external target="_blank"} for additional measures on age, gender, language and linguistic isolation, and the prevalence of disabilities among residents in Albemarle County.
+See the [full report](/pdf/albemarle-profile-final.pdf){.external target="_blank"} for additional measures on age, gender, language and linguistic isolation, and the prevalence of disabilities among residents in Albemarle County.
 
 ## American Human Development Index (AHDI)
 
@@ -666,7 +666,7 @@ health_insured_map
 ```
 
 </br></br>
-The [full profile](/pdf/albemarle-profile-draft-sm.pdf){.external target="_blank"} provides additional health measures including life expectancy, food security, various health outcome and prevention metrics, and EMS responses to opiod overdoses for Albemarle County.
+The [full profile](/pdf/albemarle-profile-final.pdf){.external target="_blank"} provides additional health measures including life expectancy, food security, various health outcome and prevention metrics, and EMS responses to opiod overdoses for Albemarle County.
 
 ## Access to Knowledge: Education Profile
 
@@ -831,7 +831,7 @@ edu_attain_map
 ```
 
 </br></br>
-The [full profile](/pdf/albemarle-profile-draft-sm.pdf){.external target="_blank"} provides additional education measures including school enrollment in Albemarle County and AP and Dual Enrollment, Suspensions, and Chronic Absenteeism in Albemarle County Public Schools.
+The [full profile](/pdf/albemarle-profile-final.pdf){.external target="_blank"} provides additional education measures including school enrollment in Albemarle County and AP and Dual Enrollment, Suspensions, and Chronic Absenteeism in Albemarle County Public Schools.
 
 ## Decent Standard of Living: Economic Security and Housing Profile
 
@@ -1325,7 +1325,7 @@ tenure_map
 ```
 
 </br></br>
-The [full profile](/pdf/albemarle-profile-draft-sm.pdf){.external target="_blank"} provides additional measures on living standards including ALICE thresholds for 2010-2023, ALICE households by Albemarle County Magisterial District, home ownership by race and ethnicity, and information on heirs' property.
+The [full profile](/pdf/albemarle-profile-final.pdf){.external target="_blank"} provides additional measures on living standards including ALICE thresholds for 2010-2023, ALICE households by Albemarle County Magisterial District, home ownership by race and ethnicity, and information on heirs' property.
 
 ## Additional Community Wellbeing Profiles
 

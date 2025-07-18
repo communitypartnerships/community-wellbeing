@@ -98,7 +98,7 @@ Ensuring the full inclusion of residents in the social, economic, and civic life
 
 ### Full Report PDF
 
-This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [City of Charlottesville Community Wellbeing Profile](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"}
+This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [City of Charlottesville Community Wellbeing Profile](/pdf/charlottesville-profile-final.pdf){.external target="_blank"}
 
 ## Demographics
 
@@ -155,7 +155,7 @@ ethn_race_2012_2023_chart
 
 ```
 
-See the [full report](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"} for additional measures on age, gender, language and linguistic isolation, and the prevalence of disabilities among residents in the City of Charlottesville.
+See the [full report](/pdf/charlottesville-profile-final.pdf){.external target="_blank"} for additional measures on age, gender, language and linguistic isolation, and the prevalence of disabilities among residents in the City of Charlottesville.
 
 ## American Human Development Index (AHDI)
 
@@ -580,7 +580,7 @@ health_insured_map
 
 ```
 </br></br>
-The [full profile](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"} provides additional health measures including life expectancy, food security, various health outcome and prevention metrics, and EMS responses to opiod overdoses for the City of Charlottesville.
+The [full profile](/pdf/charlottesville-profile-final.pdf){.external target="_blank"} provides additional health measures including life expectancy, food security, various health outcome and prevention metrics, and EMS responses to opiod overdoses for the City of Charlottesville.
 
 ## Access to Knowledge: Education Profile
 
@@ -744,7 +744,7 @@ edu_attain_map
 
 ```
 </br></br>
-The [full profile](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"} provides additional education measures including school enrollment in the City of Charlottesville and AP and Dual Enrollment, Suspensions, and Chronic Absenteeism in Charlottesville Public Schools.
+The [full profile](/pdf/charlottesville-profile-final.pdf){.external target="_blank"} provides additional education measures including school enrollment in the City of Charlottesville and AP and Dual Enrollment, Suspensions, and Chronic Absenteeism in Charlottesville Public Schools.
 
 ## Decent Standard of Living: Economic Security and Housing Profile
 
@@ -1234,7 +1234,7 @@ tenure_map
 
 ```
 </br></br>
-The [full profile](/pdf/charlottesville-profile-draft-sm.pdf){.external target="_blank"} provides additional measures on living standards including ALICE thresholds for 2010-2023, and home ownership by race and ethnicity.
+The [full profile](/pdf/charlottesville-profile-final.pdf){.external target="_blank"} provides additional measures on living standards including ALICE thresholds for 2010-2023, and home ownership by race and ethnicity.
 
 ## Additional Community Wellbeing Profiles
 
