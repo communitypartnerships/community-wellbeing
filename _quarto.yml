@@ -23,17 +23,15 @@ website:
         text: City of Charlottesville Profile
       - href: combined-area-outcomes.qmd
         text: Area Profile
-    # right: 
-    #   - href: https://virginiaequitycenter.github.io/cville-equity-atlas/
-    #     text: Charlottesville Regional Data Resources
-    #     icon: box-arrow-up-right
-    #     target: _blank
+    right:
+      - href: https://virginiaequitycenter.github.io/cville-equity-atlas/
+        text: Charlottesville Regional Data Resources
+        icon: box-arrow-up-right
+        target: _blank
   page-footer:
     background: light
     left: |
       [![](/images/uva-ccp-color.png){fig-alt="Center for Community Partnerships at UVA" width=320px }](https://communitypartnerships.virginia.edu/)
-#    center: |
-#      In partnership with [![](/images/alb-seal.png){fig-alt="Albemarle County Seal" width=65px }](https://www.albemarle.org/) [![](/images/charlottesville-seal.png){fig-alt="City of Charlottesville Seal" width=65px }](https://charlottesville.gov/)
     right:
       - href: index.qmd
         text: "Community Wellbeing Profiles Home"
