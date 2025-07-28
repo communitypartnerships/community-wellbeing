@@ -5,6 +5,7 @@ date-format: "MMMM YYYY"
 image: images/mural.jpeg
 format: 
   html:
+    html-table-processing: none
     embed-resources: true
     toc: true
     link-external-newwindow: true
@@ -294,7 +295,7 @@ The primary AHDI indicator of health is life expectancy. Life expectancy at birt
 The average lifespan in the United States has declined in recent years, giving cause for concern: in 2022, U.S. life expectancy had fallen to 76.4 years, the lowest point in almost twenty years.^[“What’s behind ‘shocking’ U.S. life expectancy decline—and what to do about it.” Harvard School of Public Health, April 13, 2023, [hsph.harvard.edu/news/whats-behind-shocking-u-s-life-expectancy-decline-and-what-to-do-about-it/](https://hsph.harvard.edu/news/whats-behind-shocking-u-s-life-expectancy-decline-and-what-to-do-about-it/)] Experts pointed to the ongoing impacts of the COVID-19 pandemic and rising rates of drug overdoses as major contributors to the striking national decline in life expectancy.^[“Why life expectancy in the US is falling.” Harvard Health Publishing, October 20, 2022, [www.health.harvard.edu/blog/why-life-expectancy-in-the-us-is-falling-202210202835](https://www.health.harvard.edu/blog/why-life-expectancy-in-the-us-is-falling-202210202835)]  
 
 ```{r life-exp-time, results = 'asis'}
-# Life Expectancy by Race ----
+
 chr_locality <- read_csv("regional-equity-profile/datacode/supplemental_downloadsremoved/data/chr_locality_measures.csv")
 
 life_exp_chart <- chr_locality %>% 
@@ -338,9 +339,8 @@ However, the state as a whole is consistently ranked low on mental health workfo
 
 
 #### Primary Care and Mental Health Care Providers: 2016-2024
-
+:::{.column-body layout-ncol=2}
 ```{r providers-time, results = 'asis'}
-#| layout-ncol: 2
 #| fig-height: 4
 
 # Health care providers ----
@@ -376,11 +376,17 @@ chr_doctors_func <- function(cat, caption) {
 }
 
 chr_doctors_func("Charlottesville + Albemarle")
-chr_doctors_func("Virginia")
 
 
 ```
 
+```{r}
+#| fig-height: 4
+
+chr_doctors_func("Virginia")
+
+```
+:::
 Data Source: County Health Rankings, 2016-2024
 
 ### Health Insurance
@@ -388,9 +394,8 @@ Data Source: County Health Rankings, 2016-2024
 Access to multiple high quality health centers like UVA Health and Sentara Healthcare is a major contributor to well-being in Charlottesville and Albemarle. However, accessible and affordable medical services are not universally available to residents, as evidenced by the area’s stark disparities in health insurance coverage. 
 
 #### Residents with No Health Insurance by Race: 2017-2023
-
+:::{.column-body layout-ncol=2}
 ```{r health-insurance-time, results = 'asis'}
-#| layout-ncol: 2
 #| fig-height: 3
 
 # Health insurance by race ----
@@ -429,17 +434,17 @@ insured_plot_func <- function(cat, color_val) {
 }
 
 insured_plot_func("All Residents", 1)
-insured_plot_func("Asian", 2)
-
 insured_plot_func("Black", 3)
-insured_plot_func("Hispanic", 4)
-
 insured_plot_func("Multiracial", 5)
-insured_plot_func("White", 6)
-
 
 ```
-
+```{r}
+#| fig-height: 3
+insured_plot_func("Asian", 2)
+insured_plot_func("Hispanic", 4)
+insured_plot_func("White", 6)
+```
+:::
 `r source_acs_range`
 
 ### Access to Parks and Exercise Opportunities
@@ -449,9 +454,8 @@ Access to parks and green spaces is increasingly understood as a vital component
 Opportunities for exercise measures whether an individual has adequate access to parks or recreational facilities, defined here as living within a half mile of a park, within one mile of a recreational facility (if in an urban area), or within three miles of a recreational facility in a rural area.
 
 #### Opportunities for Exercise: Access to Parks or Recreational Facilities
-
+:::{.column-body layout-ncol=2}
 ```{r parks-time, results = 'asis'}
-#| layout-ncol: 2
 #| fig-height: 3.5
 
 # Access to Parks or Recreational Facilities ----
@@ -484,10 +488,14 @@ chr_parks_func <- function(cat) {
 }
 
 chr_parks_func("Charlottesville + Albemarle")
+
+```
+```{r}
+#| fig-height: 3.5
 chr_parks_func("Virginia")
 
 ```
-
+:::
 Data Source: County Health Rankings, 2020-2024
 
 ## Access to Knowledge: Education Profile
@@ -614,9 +622,8 @@ School enrollment measures how many young people, ages 3 to 24 years, currently 
 In Charlottesville and Albemarle County, enrollment in formal schooling has remained steady across the last five years, from 84% in 2018 to 86% in 2023. Given the disruption of the worldwide COVID-19 pandemic beginning in March 2020, with the move to online schooling and hybrid school schedules, this stability is reassuring. 
 
 #### School Enrollment in Charlottesville and Albemarle by Age Group: 2018-2023
-
+:::{.column-body layout-ncol=2}
 ```{r school-enroll-by-age, results = 'asis'}
-#| layout-ncol: 2
 #| fig-height: 3
 
 # Enrollment by Age ----
@@ -657,56 +664,21 @@ enroll_plot_func <- function(ages, color_val) {
 }
 
 enroll_plot_func("3 to 4 year olds", 1)
-enroll_plot_func("5 to 9 year olds", 2)
 
 enroll_plot_func("10 to 14 year olds", 3)
-enroll_plot_func("15 to 17 year olds", 4)
 
 enroll_plot_func("18 and 19 year olds", 5)
-enroll_plot_func("20 to 24 year olds", 6)
-
-
-# enroll_age_plots <- map(as.list(unique(enroll_age$name)), function(x) {
-#   
-#   filtered <- enroll_age %>%
-#     filter(name == x)
-# 
-#   highchart() %>%
-#     hc_add_series(data = filtered,
-#                   hcaes(x = year, y = value, group = name),
-#                   type = "line", 
-#                   showInLegend = FALSE) %>%
-#     hc_yAxis(min = 0, max = 100, title = list(text = "Percent Enrolled"),
-#              labels = list(format = '{text}%')) %>% 
-#     hc_colors(c("#193CBC", "#FAC484", "#589ACF")) %>%
-#     hc_plotOptions(series = list(dataLabels = list(format = '{y: f}%', enabled = TRUE)),
-#                  line = list( marker = list(enabled = TRUE) )) %>%
-#     hc_tooltip(formatter = JS("function(){
-#   return '<b>' + this.key + '</b></br>' + this.series.name + ': <b>' + this.y + '%</b>'
-#   }")) %>%
-#     hc_add_theme(hc_theme_smpl()) %>% 
-#     hc_title(text = x,
-#              align = 'left')   
-#   
-#   })
-
-# enroll_age_plots
-
-# htmltools::tagList(enroll_age_plots[[1]])
-# htmltools::tagList(enroll_age_plots[[3]])
-
-# for (i in 1:6 )
-# {
-#   print(htmltools::tagList(enroll_age_plots[[i]]))
-# }
-
-
-# hw_grid(enroll_age_plots, rowheight = 300, ncol = 2) %>%
-#   htmltools::browsable()
-
 
 ```
+```{r}
+#| fig-height: 3
 
+enroll_plot_func("5 to 9 year olds", 2)
+enroll_plot_func("15 to 17 year olds", 4)
+enroll_plot_func("20 to 24 year olds", 6)
+
+```
+:::
 `r source_acs_range`
 
 ### Child Care
