@@ -5,6 +5,7 @@ date-format: "MMMM YYYY"
 image: images/alb-landscape.png
 format: 
   html:
+    html-table-processing: none
     embed-resources: true
     toc: true
 execute:
