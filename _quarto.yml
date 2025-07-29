@@ -24,7 +24,7 @@ website:
       - href: combined-area-outcomes.qmd
         text: Area Profile
     right:
-      - href: https://virginiaequitycenter.github.io/cville-equity-atlas/
+      - href: https://communitypartnerships.github.io/data-resources/
         text: Charlottesville Regional Data Resources
         icon: box-arrow-up-right
         target: _blank
@@ -42,4 +42,6 @@ format:
     css: styles.css
     toc: true
 
+execute:
+  freeze: auto
 
