@@ -4,6 +4,7 @@ date: "July 2025"
 date-format: "MMMM YYYY"
 # subtitle: "Report on measures of community well-being for the City of Charlottesville"
 image: images/mall.jpeg
+image-alt: "Photo of the Charlottesville downtown pedestrian mall."
 format: 
   html:
     html-table-processing: none
@@ -80,6 +81,8 @@ Ensuring the full inclusion of residents in the social, economic, and civic life
 ### Full Report PDF
 
 This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [City of Charlottesville Community Wellbeing Profile](/pdf/charlottesville-profile-final-sm.pdf){.external target="_blank"}
+
+See also: [Report Summary Handout](/pdf/charlottesville-summary.pdf){.external target="_blank"}
 
 ## Demographics
 

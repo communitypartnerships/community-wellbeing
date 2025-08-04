@@ -3,6 +3,7 @@ title: "Albemarle and Charlottesville Combined Area Profile: Key Outcomes"
 date: "July 2025"
 date-format: "MMMM YYYY"
 image: images/mural.jpeg
+image-alt: "Photo of mural with figures holding hands."
 format: 
   html:
     html-table-processing: none
@@ -59,6 +60,8 @@ The City of Charlottesville and Albemarle County are deeply intertwined—econom
 ### Full Report PDF
 
 This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [Albemarle and Charlottesville Combined Area Profile](/pdf/combined-area-profile-final-sm.pdf){.external target="_blank"}
+
+See also: [Report Summary Handout](/pdf/combined-area-summary.pdf){.external target="_blank"}
 
 ## Demographics
 

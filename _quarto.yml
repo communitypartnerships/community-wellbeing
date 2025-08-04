@@ -5,8 +5,8 @@ project:
     - "*-outcomes.qmd"
     - "!regional-equity-profile/"
   resources: 
-    - "/pdf"
-    - "/images"
+    - "pdf/"
+    - "images/"
 website:
   favicon: images/favicon.ico
   open-graph: 

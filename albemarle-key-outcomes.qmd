@@ -3,6 +3,7 @@ title: "Albemarle County Profile: Key Outcomes"
 date: "July 2025"
 date-format: "MMMM YYYY"
 image: images/alb-landscape.png
+image-alt: "Photo of Albemarle county landscape with grass field and mountains in distance."
 format: 
   html:
     html-table-processing: none
@@ -86,6 +87,8 @@ Ensuring the full inclusion of residents in the social, economic, and civic life
 ### Full Report PDF
 
 This interactive online version of the Community Wellbeing Profile presents key outcomes from the full report. For further metrics, analysis, policy connections, and data sources, please see the report PDF: [Albemarle County Community Wellbeing Profile](/pdf/albemarle-profile-final-sm.pdf){.external target="_blank"}
+
+See also: [Report Summary Handout](/pdf/albemarle-summary.pdf){.external target="_blank"}
 
 ## Demographics
 
